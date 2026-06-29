@@ -117,6 +117,80 @@ export default async function ChampionPage({ params }) {
         )}
       </div>
 
+      {/* 社区套路 */}
+      {champion.builds && champion.builds.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            社区推荐套路
+          </h2>
+          <div className="space-y-5">
+            {champion.builds.map((build, i) => (
+              <div key={i} className="border border-gray-200 rounded-xl p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{build.title}</h3>
+                    <p className="text-sm text-gray-500">
+                      来源: {build.author} · {build.source}
+                    </p>
+                  </div>
+                  {build.dateAdded && (
+                    <span className="text-xs text-gray-400">{build.dateAdded}</span>
+                  )}
+                </div>
+
+                {build.description && (
+                  <p className="text-sm text-gray-600 mb-3">{build.description}</p>
+                )}
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-400 uppercase mb-2">
+                      推荐出装顺序
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(build.items || []).map((item) => (
+                        <span
+                          key={item}
+                          className="px-2.5 py-1 text-sm bg-amber-50 text-amber-800 rounded-lg border border-amber-200"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-400 uppercase mb-2">
+                      海克斯符文
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(build.hextechAugments || []).map((aug) => (
+                        <span
+                          key={aug}
+                          className="px-2.5 py-1 text-sm bg-indigo-50 text-indigo-800 rounded-lg border border-indigo-200"
+                        >
+                          {aug}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {build.sourceUrl && (
+                  <a
+                    href={build.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-3 text-xs text-blue-500 hover:text-blue-700"
+                  >
+                    查看原视频 →
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* All Augments Tier List */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">

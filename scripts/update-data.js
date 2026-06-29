@@ -288,14 +288,31 @@ async function main() {
     return b.winRate - a.winRate;
   });
 
-  // 5. 写入 data/champions.json
-  console.log("4. 写入文件...");
+  // 5. 合并已存在的手动数据 (builds 等)
+  console.log("4. 合并手动数据...");
   const outputPath = path.join(DATA_DIR, "champions.json");
   const existingRaw = fs.existsSync(outputPath)
     ? fs.readFileSync(outputPath, "utf-8")
     : "[]";
   const existingData = JSON.parse(existingRaw);
 
+  for (const newChamp of champions) {
+    const oldChamp = existingData.find((c) => c.id === newChamp.id);
+    if (oldChamp) {
+      // 保留手动添加的社区套路
+      if (oldChamp.builds && oldChamp.builds.length > 0) {
+        newChamp.builds = oldChamp.builds;
+      }
+      // 保留手动添加的别名
+      if (oldChamp.aliases && oldChamp.aliases.length > 0) {
+        const merged = [...new Set([...oldChamp.aliases, ...newChamp.aliases])];
+        newChamp.aliases = merged;
+      }
+    }
+  }
+
+  // 6. 写入 data/champions.json
+  console.log("5. 写入文件...");
   fs.writeFileSync(outputPath, JSON.stringify(champions, null, 2), "utf-8");
 
   const oldCount = existingData.length;
