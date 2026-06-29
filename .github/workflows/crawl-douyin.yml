@@ -30,6 +30,10 @@ jobs:
       - name: 安装 ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
+      - name: 安装 Playwright Chromium
+        run: |
+          uv run --with playwright -- python -m playwright install chromium 2>&1
+
       - name: 运行爬虫
         env:
           SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}

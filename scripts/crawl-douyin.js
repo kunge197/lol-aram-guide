@@ -29,10 +29,30 @@ const STATE_FILE = path.join(DATA_DIR, ".crawl-state.json");
 const CHAMPIONS_FILE = path.join(DATA_DIR, "champions.json");
 const OTHER_BUILDS_FILE = path.join(DATA_DIR, "other-builds.json");
 
-// ===== 博主配置（用户后续补充） =====
-const BLOGGERS = [];
+// 首次爬取只处理此日期之后的视频（第一次设为 2026-06-12）
+// 之后自动更新为上次爬取时间
+const FIRST_CRAWL_SINCE = new Date("2026-06-12T00:00:00+08:00").getTime() / 1000;
+
+// ===== 博主配置 =====
+const BLOGGERS = [
+  {
+    name: "皇子凡",
+    url: "https://www.douyin.com/user/MS4wLjABAAAAahe2W9pdv6se5wgletSviwIzl6fZmhMlULAQsj14JRQ",
+  },
+  {
+    name: "徐小涵哟",
+    url: "https://www.douyin.com/user/MS4wLjABAAAA3N8rhvUVREVQ9FcT-N3JFYcKZpsGU80xWcH31WvAkpw",
+  },
+  {
+    name: "乱斗嘟嘟嘟",
+    url: "https://www.douyin.com/user/MS4wLjABAAAAqjSdAVxndnKen3vwkgaohrZv4DOHEq_9FhAHDT3FoOnSx_3mEcUI3y9bmncPaJUs",
+  },
+];
 
 // ===== LLM 配置 =====
+// 如果用 DeepSeek，设置环境变量：
+//   LLM_BASE_URL=https://api.deepseek.com/v1
+//   LLM_MODEL=deepseek-chat
 const LLM_CONFIG = {
   apiKey: process.env.LLM_API_KEY || process.env.SILICONFLOW_API_KEY || "",
   baseURL: process.env.LLM_BASE_URL || "https://api.siliconflow.cn/v1",
@@ -69,11 +89,22 @@ function log(...args) {
 // ==================== 状态管理 ====================
 
 function getState() {
-  return readJSON(STATE_FILE) || { processedVideos: [], lastCrawlTime: null };
+  return readJSON(STATE_FILE) || {
+    processedVideos: [],
+    lastCrawlTime: null,
+    firstCrawlDone: false,
+  };
 }
 
 function saveState(state) {
   writeJSON(STATE_FILE, state);
+}
+
+function markCrawlDone() {
+  const state = getState();
+  state.lastCrawlTime = new Date().toISOString();
+  state.firstCrawlDone = true;
+  saveState(state);
 }
 
 function isVideoProcessed(videoId) {
@@ -89,7 +120,62 @@ function markVideoProcessed(videoId) {
   saveState(state);
 }
 
-// ==================== 网络请求 ====================
+// ==================== 博主视频发现 ====================
+
+/**
+ * 通过 Playwright 爬取博主主页，发现最新视频
+ * 调用 douyin_user_videos.py 脚本
+ */
+async function discoverVideosFromBlogger(blogger) {
+  log(`获取视频列表: ${blogger.name}`);
+
+  const state = getState();
+  // 计算时间过滤：首次爬取用固定日期，之后用上次爬取时间
+  let sinceTime;
+  if (!state.firstCrawlDone) {
+    sinceTime = FIRST_CRAWL_SINCE;
+    log(`  首次爬取，获取 ${new Date(FIRST_CRAWL_SINCE * 1000).toISOString().split("T")[0]} 后的视频`);
+  } else {
+    const lastCrawl = state.lastCrawlTime
+      ? new Date(state.lastCrawlTime).getTime() / 1000 - 86400 // 多取1天容错
+      : FIRST_CRAWL_SINCE;
+    sinceTime = lastCrawl;
+  }
+
+  const scriptPath = path.join(__dirname, "douyin_user_videos.py");
+  if (!fs.existsSync(scriptPath)) {
+    log(`  ⚠️ douyin_user_videos.py 不存在，跳过自动发现`);
+    return [];
+  }
+
+  const { execSync } = require("child_process");
+  try {
+    const daysSince = Math.max(1, Math.ceil((Date.now() / 1000 - sinceTime) / 86400));
+    const output = execSync(
+      `uv run --script "${scriptPath}" "${blogger.url}" --days ${daysSince}`,
+      { timeout: 120000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
+    );
+    const result = JSON.parse(output);
+
+    if (result.error) {
+      log(`  ❌ ${result.error}`);
+      return [];
+    }
+
+    const videos = result.videos || [];
+    log(`  发现 ${videos.length} 个视频`);
+
+    return videos.map((v) => ({
+      id: v.id,
+      url: `https://www.douyin.com/video/${v.id}`,
+      desc: (v.desc || "").substring(0, 80),
+    }));
+  } catch (e) {
+    log(`  ❌ 获取视频列表失败: ${e.message}`);
+    log(`  请用 --url 参数手动提供视频链接`);
+    return [];
+  }
+}
 
 function fetchWithRetry(url, options = {}, retries = 3) {
   return new Promise((resolve, reject) => {
@@ -442,8 +528,23 @@ async function main() {
     return;
   }
 
-  // 博主模式（后续实现自动发现）
-  log("博主模式暂未实现自动发现，请先用 --url 参数处理单个视频");
+  // 博主模式
+  log("开始爬取博主视频...");
+
+  for (const blogger of BLOGGERS) {
+    log(`\n===== ${blogger.name} =====`);
+    const videos = await discoverVideosFromBlogger(blogger);
+
+    for (let i = 0; i < videos.length; i++) {
+      const v = videos[i];
+      log(`\n[${i + 1}/${videos.length}] ${v.desc || v.id}`);
+      await processVideo(v.url, `@${blogger.name}`);
+      await sleep(3000);
+    }
+  }
+
+  markCrawlDone();
+  log("\n===== 爬取完成 =====");
 }
 
 main().catch((e) => {
