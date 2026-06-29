@@ -2,7 +2,6 @@ name: 套路数据爬取
 
 on:
   schedule:
-    # 每 3 天 UTC 时间 2:00 运行 (北京时间 10:00)
     - cron: "0 2 */3 * *"
   workflow_dispatch:
     inputs:
@@ -16,28 +15,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: 安装 Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       - name: 安装依赖
         run: npm ci
 
-      - name: 安装 ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
-      - name: 安装 Playwright Chromium
+      - name: 安装系统依赖
         run: |
-          uv run --with playwright -- python -m playwright install chromium 2>&1
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg google-chrome-stable
+
+      - name: 安装 Python 和 uv
+        run: |
+          pip install uv
 
       - name: 运行爬虫
         env:
           SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
         run: |
           if [ -n "${{ inputs.urls }}" ]; then
             echo "${{ inputs.urls }}" | tr ',' '\n' | while read url; do
@@ -48,14 +50,14 @@ jobs:
             npm run crawl
           fi
 
-      - name: 检查是否有数据变更
+      - name: 检查数据变更
         id: check
         run: |
           if [ -n "$(git status --porcelain 'data/champions.json' 'data/other-builds.json')" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: 构建并部署
+      - name: 提交并推送
         if: steps.check.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"

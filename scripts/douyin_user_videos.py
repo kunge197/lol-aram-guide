@@ -14,6 +14,7 @@
 
 import asyncio
 import json
+import os
 import sys
 import time
 from playwright.async_api import async_playwright
@@ -25,16 +26,27 @@ async def extract_user_videos(user_url: str, max_videos: int = 50) -> list[dict]
     api_responses = []
     api_event = asyncio.Event()
 
+    # 从环境变量读取代理配置 (如 HTTPS_PROXY=http://127.0.0.1:7890)
+    proxy_args = []
+    proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
+    if proxy:
+        proxy_args = [f"--proxy-server={proxy}"]
+
+    launch_args = ["--no-sandbox", "--disable-setuid-sandbox"] + proxy_args
+
     async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            channel="chrome",
-            headless=True,
-            args=[
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--proxy-server=http://127.0.0.1:7890",
-            ],
-        )
+        # 优先用系统 Chrome，没有则用 Playwright Chromium
+        try:
+            browser = await p.chromium.launch(
+                channel="chrome",
+                headless=True,
+                args=launch_args,
+            )
+        except Exception:
+            browser = await p.chromium.launch(
+                headless=True,
+                args=launch_args,
+            )
         context = await browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -58,14 +70,14 @@ async def extract_user_videos(user_url: str, max_videos: int = 50) -> list[dict]
 
         page.on("response", on_response)
 
-        # 导航到博主主页（超时是预期的，不影响数据获取）
+        # 导航到博主主页（超时不影响，数据已在回调中捕获）
         try:
-            await page.goto(user_url, wait_until="networkidle", timeout=45000)
+            await page.goto(user_url, wait_until="networkidle", timeout=50000)
         except Exception:
             pass
 
         # 等待视频数据加载
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)
 
         # 从 DOM 提取视频 ID（兜底）
         dom_ids = set()
