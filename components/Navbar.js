@@ -8,7 +8,15 @@ export default function Navbar() {
           <Link href="/" className="text-xl font-bold tracking-wide">
             ⚡ 海克斯乱斗资料库
           </Link>
-          <span className="text-sm text-blue-200">v16.13.1</span>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/updates"
+              className="text-sm text-blue-200 hover:text-white transition-colors"
+            >
+              更新日志
+            </Link>
+            <span className="text-sm text-blue-200">v16.13.1</span>
+          </div>
         </div>
       </div>
     </nav>
