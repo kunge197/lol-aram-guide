@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "update-data": "node scripts/update-data.js"
+    "update-data": "node scripts/update-data.js",
+    "crawl": "node scripts/crawl-douyin.js"
   },
   "dependencies": {
     "next": "16.2.9",
+    "openai": "^6.45.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

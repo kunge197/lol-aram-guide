@@ -1,62 +1,29 @@
-import { notFound, redirect } from "next/navigation";
-import { getChampionById, getChampionTypeName } from "@/lib/utils";
-import championsData from "@/data/champions.json";
+import Link from "next/link";
+import otherBuilds from "@/data/other-builds.json";
 
-export function generateStaticParams() {
-  return championsData
-    .filter((c) => c.builds && c.builds.length > 0)
-    .map((c) => ({ id: c.id }));
-}
-
-export default async function ChampionPage({ params }) {
-  const { id } = await params;
-  const champion = getChampionById(id);
-
-  if (!champion) {
-    notFound();
-  }
-
-  // 没有套路的英雄重定向到首页
-  if (!champion.builds || champion.builds.length === 0) {
-    redirect("/");
-  }
-
+export default function OtherBuildsPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-        <div className="mb-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">
-            {champion.name}
-          </h1>
-          <p className="text-lg text-gray-500">
-            {champion.title} &middot; {champion.nameEn}
-          </p>
-        </div>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">其他套路</h1>
+      <p className="text-gray-500 mb-8">
+        暂未识别出对应英雄的套路，如果你知道是哪个英雄的，欢迎补充。
+      </p>
 
-        <div className="flex flex-wrap gap-2">
-          {champion.types.map((type) => (
-            <span
-              key={type}
-              className="px-3 py-1 text-sm rounded-full bg-blue-50 text-blue-700 border border-blue-100"
-            >
-              {getChampionTypeName(type)}
-            </span>
-          ))}
+      {otherBuilds.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-lg mb-2">暂无未分类套路</p>
+          <p className="text-sm">所有已爬取的套路都已匹配到对应英雄</p>
         </div>
-      </div>
-
-      {/* 社区套路 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          社区推荐套路
-        </h2>
+      ) : (
         <div className="space-y-5">
-          {champion.builds.map((build, i) => (
-            <div key={i} className="border border-gray-200 rounded-xl p-5">
+          {otherBuilds.map((build, i) => (
+            <div
+              key={build.id || i}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{build.title}</h3>
+                  <h2 className="font-semibold text-gray-900">{build.title}</h2>
                   <p className="text-sm text-gray-500">
                     来源: {build.author} · {build.source}
                   </p>
@@ -113,10 +80,18 @@ export default async function ChampionPage({ params }) {
                   查看原视频 →
                 </a>
               )}
+
+              {build.possibleChampions && build.possibleChampions.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-xs text-gray-400">
+                    可能英雄: {build.possibleChampions.join(", ")}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,5 @@
 {
   "gameVersion": "16.13.1",
-  "dataVersion": "1.0.0",
-  "updatedAt": "2026-06-29T12:25:10.710Z",
-  "source": "Riot Data Dragon API",
-  "championCount": 173,
-  "note": "胜率/选取率为基于英雄类型的估算值，接入比赛数据后可替换"
+  "updatedAt": "2026-06-29T15:17:31.291Z",
+  "championCount": 173
 }

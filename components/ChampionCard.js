@@ -1,22 +1,20 @@
 import Link from "next/link";
-import TierBadge from "./TierBadge";
-import { getWinRateColor } from "@/lib/utils";
 
 export default function ChampionCard({ champion }) {
+  const builds = champion.builds || [];
+  const buildCount = builds.length;
+
   return (
     <Link
       href={`/champions/${champion.id}`}
       className="block bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all duration-200 overflow-hidden group"
     >
       <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
-              {champion.name}
-            </h3>
-            <p className="text-sm text-gray-500">{champion.title}</p>
-          </div>
-          <TierBadge tier={champion.tier} size="md" />
+        <div className="mb-3">
+          <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
+            {champion.name}
+          </h3>
+          <p className="text-sm text-gray-500">{champion.title}</p>
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -30,14 +28,19 @@ export default function ChampionCard({ champion }) {
           ))}
         </div>
 
-        <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-50">
-          <span>
-            胜率{" "}
-            <span className={`font-semibold ${getWinRateColor(champion.winRate)}`}>
-              {champion.winRate}%
-            </span>
-          </span>
-          <span className="text-gray-400">选取率 {champion.pickRate}%</span>
+        <div className="text-sm pt-3 border-t border-gray-50">
+          {buildCount > 0 ? (
+            <div className="text-blue-600 font-medium">
+              {buildCount} 个套路
+              {builds[0] && (
+                <p className="text-gray-400 font-normal truncate mt-0.5">
+                  {builds[0].title}
+                </p>
+              )}
+            </div>
+          ) : (
+            <span className="text-gray-400">暂无套路</span>
+          )}
         </div>
       </div>
     </Link>

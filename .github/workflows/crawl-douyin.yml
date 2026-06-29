@@ -1,0 +1,61 @@
+name: 套路数据爬取
+
+on:
+  schedule:
+    # 每 3 天 UTC 时间 2:00 运行 (北京时间 10:00)
+    - cron: "0 2 */3 * *"
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "要处理的视频链接（多个用逗号分隔）"
+        required: false
+        type: string
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 安装 ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: 运行爬虫
+        env:
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          if [ -n "${{ inputs.urls }}" ]; then
+            echo "${{ inputs.urls }}" | tr ',' '\n' | while read url; do
+              url=$(echo "$url" | xargs)
+              [ -n "$url" ] && npm run crawl -- --url "$url"
+            done
+          else
+            npm run crawl
+          fi
+
+      - name: 检查是否有数据变更
+        id: check
+        run: |
+          if [ -n "$(git status --porcelain 'data/champions.json' 'data/other-builds.json')" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 构建并部署
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/champions.json data/other-builds.json data/.crawl-state.json
+          git commit -m "chore(data): 自动爬取套路数据 $(date +%Y-%m-%d)"
+          git push

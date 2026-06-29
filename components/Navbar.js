@@ -10,10 +10,10 @@ export default function Navbar() {
           </Link>
           <div className="flex items-center gap-4">
             <Link
-              href="/updates"
+              href="/other-builds"
               className="text-sm text-blue-200 hover:text-white transition-colors"
             >
-              更新日志
+              其他套路
             </Link>
             <span className="text-sm text-blue-200">v16.13.1</span>
           </div>

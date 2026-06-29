@@ -2,53 +2,37 @@
 
 import { useState, useMemo } from "react";
 import ChampionCard from "@/components/ChampionCard";
-import TypeFilter from "@/components/TypeFilter";
-import { getChampions, getChampionTypes, getChampionsByType, searchChampions } from "@/lib/utils";
+import { getChampionsWithBuilds } from "@/lib/utils";
 
 export default function HomePage() {
-  const [activeType, setActiveType] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const champions = useMemo(() => getChampions(), []);
-  const types = useMemo(() => getChampionTypes(), []);
+  const champions = useMemo(() => getChampionsWithBuilds(), []);
 
   const filteredChampions = useMemo(() => {
-    let result = activeType ? getChampionsByType(activeType) : champions;
-    if (searchQuery.trim()) {
-      result = result.filter(
-        (c) =>
-          c.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-          c.nameEn.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-          c.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-          c.aliases.some((alias) =>
-            alias.toLowerCase().includes(searchQuery.trim().toLowerCase())
-          )
-      );
-    }
-    return result;
-  }, [activeType, champions, searchQuery]);
-
-  const sortedChampions = useMemo(() => {
-    return [...filteredChampions].sort((a, b) => {
-      const tierOrder = { S: 0, A: 1, B: 2, C: 3 };
-      const tierDiff = (tierOrder[a.tier] ?? 99) - (tierOrder[b.tier] ?? 99);
-      if (tierDiff !== 0) return tierDiff;
-      return b.winRate - a.winRate;
-    });
-  }, [filteredChampions]);
+    if (!searchQuery.trim()) return champions;
+    const q = searchQuery.trim().toLowerCase();
+    return champions.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.nameEn.toLowerCase().includes(q) ||
+        c.title.toLowerCase().includes(q) ||
+        c.aliases.some((alias) => alias.toLowerCase().includes(q))
+    );
+  }, [searchQuery, champions]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          海克斯大乱斗英雄榜单
+          海克斯乱斗资料库
         </h1>
         <p className="text-gray-500">
-          搜索英雄或按类型筛选，查看胜率与海克斯符文推荐
+          来自抖音博主的社区套路合集，搜索英雄查看推荐出装与海克斯符文
         </p>
       </div>
 
       {/* 搜索框 */}
-      <div className="mb-4">
+      <div className="mb-6">
         <div className="relative max-w-xl">
           <input
             type="text"
@@ -83,30 +67,21 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 类型筛选 */}
-      <div className="mb-6">
-        <TypeFilter
-          types={types}
-          activeType={activeType}
-          onTypeChange={setActiveType}
-        />
-      </div>
-
       {/* 结果统计 */}
       <div className="mb-4 text-sm text-gray-400">
         {searchQuery
-          ? `搜索 "${searchQuery}" 共找到 ${sortedChampions.length} 个英雄`
-          : `共 ${champions.length} 个英雄`}
+          ? `搜索 "${searchQuery}" 共找到 ${filteredChampions.length} 个英雄`
+          : `共 ${champions.length} 个英雄有社区套路`}
       </div>
 
       {/* 英雄卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {sortedChampions.map((champion) => (
+        {filteredChampions.map((champion) => (
           <ChampionCard key={champion.id} champion={champion} />
         ))}
       </div>
 
-      {sortedChampions.length === 0 && (
+      {filteredChampions.length === 0 && (
         <div className="text-center py-16 text-gray-400">
           <p className="text-lg mb-2">未找到匹配的英雄</p>
           <p className="text-sm">
