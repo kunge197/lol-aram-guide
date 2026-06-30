@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "title": "未知套路",
+    "author": "@抖音博主",
+    "source": "抖音",
+    "sourceUrl": "https://www.douyin.com/video/7652307544153347455",
+    "description": "",
+    "items": [],
+    "hextechAugments": [],
+    "dateAdded": "2026-06-30",
+    "id": "other_1782817068857_3e13"
+  },
+  {
+    "title": "破罗蛮冲·全屏轰炸流",
+    "author": "@抖音博主",
+    "source": "抖音",
+    "sourceUrl": "https://www.douyin.com/video/7654427443377371044",
+    "description": "利用破罗蛮冲与狙神飞心联动，捡饼干快速升级魄罗伤害，后期全屏秒杀脆皮。",
+    "items": [],
+    "hextechAugments": [
+      "破罗蛮冲",
+      "狙神飞心"
+    ],
+    "dateAdded": "2026-06-30",
+    "id": "other_1782817072640_b163"
+  },
+  {
+    "title": "未知套路",
+    "author": "@抖音博主",
+    "source": "抖音",
+    "sourceUrl": "https://www.douyin.com/video/7651089175727752191",
+    "description": "",
+    "items": [],
+    "hextechAugments": [],
+    "dateAdded": "2026-06-30",
+    "id": "other_1782817132062_f583"
+  }
+]

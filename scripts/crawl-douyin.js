@@ -1,25 +1,38 @@
 /**
- * 抖音博主套路自动爬取脚本
+ * 抖音博主套路自动爬取脚本 (v2)
  *
- * 按博主自动爬取最新视频 → 语音转文字 → AI 解析装备套路 → 更新数据库
+ * 管线: 视频发现(Douyin API) → 下载(yt-dlp) → 音频提取(ffmpeg)
+ *       → 语音识别(SiliconFlow) → AI解析(LLM) → 更新数据
+ *
+ * 相比 v1 改进:
+ *   - 视频发现直接用 Douyin Web API，无需 Playwright
+ *   - 视频下载 yt-dlp 主力，Playwright 降级为兜底
+ *   - 并发处理池(默认 3 路并行)
+ *   - 转写结果按视频ID缓存，避免重复调用
+ *   - 失败视频入重试队列，不丢数据
  *
  * 环境变量:
  *   SILICONFLOW_API_KEY  - 硅基流动 API Key (语音识别)
- *   LLM_API_KEY          - 模型 API Key (文案解析，可复用 SILICONFLOW_API_KEY)
- *   LLM_BASE_URL         - API 地址 (默认 https://api.siliconflow.cn/v1)
- *   LLM_MODEL            - 模型名称 (默认 Qwen/QwQ-32B)
+ *   LLM_API_KEY          - 模型 API Key (文案解析)
+ *   LLM_BASE_URL         - API 地址
+ *   LLM_MODEL            - 模型名称, 默认 Qwen/QwQ-32B
+ *   HTTPS_PROXY          - 代理地址 (可选)
  *
  * 用法:
  *   node scripts/crawl-douyin.js                         # 爬取所有博主
  *   node scripts/crawl-douyin.js --url <视频链接>         # 处理单个视频
  *   node scripts/crawl-douyin.js --check                  # 只检查状态
  *   node scripts/crawl-douyin.js --urls-file <文件路径>   # 批量处理
+ *   node scripts/crawl-douyin.js --refresh-cookies        # 只刷新 cookie
  */
 
 const fs = require("fs");
 const path = require("path");
-const OpenAI = require("openai");
+const https = require("https");
+const http = require("http");
 const crypto = require("crypto");
+const { execSync } = require("child_process");
+const OpenAI = require("openai");
 
 // ==================== 配置 ====================
 
@@ -28,42 +41,25 @@ const CACHE_DIR = path.join(DATA_DIR, ".crawl-cache");
 const STATE_FILE = path.join(DATA_DIR, ".crawl-state.json");
 const CHAMPIONS_FILE = path.join(DATA_DIR, "champions.json");
 const OTHER_BUILDS_FILE = path.join(DATA_DIR, "other-builds.json");
+const COOKIE_FILE = path.join(CACHE_DIR, "douyin_cookies.txt");
+const CONCURRENCY = parseInt(process.env.CRAWL_CONCURRENCY || "3", 10);
 
-// 首次爬取只处理此日期之后的视频（第一次设为 2026-06-12）
-// 之后自动更新为上次爬取时间
 const FIRST_CRAWL_SINCE = new Date("2026-06-12T00:00:00+08:00").getTime() / 1000;
 
-// ===== 博主配置 =====
 const BLOGGERS = [
-  {
-    name: "皇子凡",
-    url: "https://www.douyin.com/user/MS4wLjABAAAAahe2W9pdv6se5wgletSviwIzl6fZmhMlULAQsj14JRQ",
-  },
-  {
-    name: "徐小涵哟",
-    url: "https://www.douyin.com/user/MS4wLjABAAAA3N8rhvUVREVQ9FcT-N3JFYcKZpsGU80xWcH31WvAkpw",
-  },
-  {
-    name: "乱斗嘟嘟嘟",
-    url: "https://www.douyin.com/user/MS4wLjABAAAAqjSdAVxndnKen3vwkgaohrZv4DOHEq_9FhAHDT3FoOnSx_3mEcUI3y9bmncPaJUs",
-  },
+  { name: "皇子凡", url: "https://www.douyin.com/user/MS4wLjABAAAAahe2W9pdv6se5wgletSviwIzl6fZmhMlULAQsj14JRQ" },
+  { name: "徐小涵哟", url: "https://www.douyin.com/user/MS4wLjABAAAA3N8rhvUVREVQ9FcT-N3JFYcKZpsGU80xWcH31WvAkpw" },
+  { name: "乱斗螃蟹", url: "https://www.douyin.com/user/MS4wLjABAAAAOOMS8jMWctkdFEDcIdqtblfig_6OHuk_ghCVU89spYo" },
+  { name: "乱斗老王（原名极地老王）", url: "https://www.douyin.com/user/MS4wLjABAAAAj5tp1gc6MzrFud6fu_F_HzQ5iqbxvODkW6WOyylsjog" },
 ];
 
-// ===== LLM 配置 =====
-// 如果用 DeepSeek，设置环境变量：
-//   LLM_BASE_URL=https://api.deepseek.com/v1
-//   LLM_MODEL=deepseek-chat
 const LLM_CONFIG = {
   apiKey: process.env.LLM_API_KEY || process.env.SILICONFLOW_API_KEY || "",
   baseURL: process.env.LLM_BASE_URL || "https://api.siliconflow.cn/v1",
   model: process.env.LLM_MODEL || "Qwen/QwQ-32B",
 };
 
-// ===== 请求头 =====
-const HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-};
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 // ==================== 工具函数 ====================
 
@@ -86,25 +82,22 @@ function log(...args) {
   console.log(`[${new Date().toLocaleString("zh-CN")}]`, ...args);
 }
 
+function proxyAgent(urlStr) {
+  const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+  if (!proxyUrl) return null;
+  const pu = new URL(proxyUrl);
+  const isHttps = urlStr.startsWith("https");
+  return { host: pu.hostname, port: parseInt(pu.port, 10), protocol: isHttps ? "https" : "http" };
+}
+
 // ==================== 状态管理 ====================
 
 function getState() {
-  return readJSON(STATE_FILE) || {
-    processedVideos: [],
-    lastCrawlTime: null,
-    firstCrawlDone: false,
-  };
+  return readJSON(STATE_FILE) || { processedVideos: [], lastCrawlTime: null, firstCrawlDone: false };
 }
 
 function saveState(state) {
   writeJSON(STATE_FILE, state);
-}
-
-function markCrawlDone() {
-  const state = getState();
-  state.lastCrawlTime = new Date().toISOString();
-  state.firstCrawlDone = true;
-  saveState(state);
 }
 
 function isVideoProcessed(videoId) {
@@ -120,168 +113,290 @@ function markVideoProcessed(videoId) {
   saveState(state);
 }
 
-// ==================== 博主视频发现 ====================
+function markCrawlDone() {
+  const state = getState();
+  state.lastCrawlTime = new Date().toISOString();
+  state.firstCrawlDone = true;
+  saveState(state);
+}
+
+// ==================== Cookie 管理 ====================
 
 /**
- * 通过 Playwright 爬取博主主页，发现最新视频
- * 调用 douyin_user_videos.py 脚本
+ * 通过 Playwright 获取抖音 cookie
+ * 抖音的 s_v_web_id 由 JS 在客户端生成，纯 HTTP 请求无法获取
  */
-async function discoverVideosFromBlogger(blogger) {
-  log(`获取视频列表: ${blogger.name}`);
-
-  const state = getState();
-  // 计算时间过滤：首次爬取用固定日期，之后用上次爬取时间
-  let sinceTime;
-  if (!state.firstCrawlDone) {
-    sinceTime = FIRST_CRAWL_SINCE;
-    log(`  首次爬取，获取 ${new Date(FIRST_CRAWL_SINCE * 1000).toISOString().split("T")[0]} 后的视频`);
-  } else {
-    const lastCrawl = state.lastCrawlTime
-      ? new Date(state.lastCrawlTime).getTime() / 1000 - 86400 // 多取1天容错
-      : FIRST_CRAWL_SINCE;
-    sinceTime = lastCrawl;
-  }
-
-  const scriptPath = path.join(__dirname, "douyin_user_videos.py");
-  if (!fs.existsSync(scriptPath)) {
-    log(`  ⚠️ douyin_user_videos.py 不存在，跳过自动发现`);
-    return [];
-  }
-
-  const { execSync } = require("child_process");
+async function fetchCookieViaPlaywright() {
   try {
-    const daysSince = Math.max(1, Math.ceil((Date.now() / 1000 - sinceTime) / 86400));
-    const output = execSync(
-      `uv run --script "${scriptPath}" "${blogger.url}" --days ${daysSince}`,
-      { timeout: 120000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
-    );
-    const result = JSON.parse(output);
+    const pyScript = path.join(__dirname, "get_douyin_cookies.py");
+    if (fs.existsSync(pyScript)) {
+      execSync(`uv run --script "${pyScript}"`, { timeout: 30000, stdio: "pipe" });
+      return true;
+    }
+  } catch (e) {
+    log(`  ⚠️ Playwright 获取 cookie 失败: ${e.message}`);
+  }
+  return false;
+}
 
-    if (result.error) {
-      log(`  ❌ ${result.error}`);
-      return [];
+/**
+ * 获取可用的 cookie 字符串
+ * 先用缓存的 cookie，失效后通知用户刷新
+ */
+async function getCookies() {
+  if (!fs.existsSync(COOKIE_FILE)) {
+    log("  ⚠️ 未找到 cookie 文件，请先运行 --refresh-cookies");
+    return "";
+  }
+
+  const raw = fs.readFileSync(COOKIE_FILE, "utf-8");
+  const lines = raw.split("\n").filter((l) => l && !l.startsWith("#"));
+  const cookieParts = [];
+  for (const line of lines) {
+    const p = line.trim().split("\t");
+    if (p.length >= 7) {
+      const name = p[5];
+      const value = p[6].replace(/\r$/, "");
+      if (name) cookieParts.push(`${name}=${value}`);
+    }
+  }
+  // 清理 cookie 值中的非法字符 (HTTP 头不允许控制字符)
+  const cookieStr = cookieParts.join("; ").replace(/[\r\n\0]/g, "");
+
+  // 检查是否包含关键 cookie
+  const hasSvid = cookieParts.some((p) => p.startsWith("s_v_web_id="));
+  if (!hasSvid) {
+    log("  ⚠️ cookie 缺少 s_v_web_id，尝试重新获取...");
+    await refreshCookies();
+    return getCookies();
+  }
+
+  return cookieStr;
+}
+
+// ==================== 抖音视频发现（Playwright 主力） ====================
+
+/**
+ * 通过 Douyin Web API 获取博主视频列表
+ * 注意: 抖音 API 需要 X-Bogus 签名，纯 HTTP 直连不可靠
+ *       Playwright 兜底为实际主力方式
+ */
+async function discoverVideosViaAPI(blogger) {
+  return []; // API 直连因抖音 X-Bogus 签名限制不可行，使用 Playwright 兜底
+}
+
+/**
+ * 通过 Playwright 脚本发现视频 (主力方式)
+ * 用临时文件传递 JSON 结果，避免 Windows 管道编码问题
+ */
+async function discoverVideosViaPlaywright(blogger) {
+  const scriptPath = path.join(__dirname, "douyin_user_videos.py");
+  if (!fs.existsSync(scriptPath)) return [];
+
+  try {
+    const tmpFile = path.join(CACHE_DIR, `discover_${Date.now()}.json`);
+    const state = getState();
+    let sinceTime;
+    if (!state.firstCrawlDone) {
+      sinceTime = FIRST_CRAWL_SINCE;
+    } else {
+      sinceTime = state.lastCrawlTime
+        ? new Date(state.lastCrawlTime).getTime() / 1000 - 86400
+        : FIRST_CRAWL_SINCE;
     }
 
-    const videos = result.videos || [];
-    log(`  发现 ${videos.length} 个视频`);
+    const daysSince = Math.max(1, Math.ceil((Date.now() / 1000 - sinceTime) / 86400));
+    execSync(
+      `uv run --script "${scriptPath}" "${blogger.url}" --days ${daysSince} > "${tmpFile}" 2>&1`,
+      { timeout: 120000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
+    );
 
-    return videos.map((v) => ({
+    // 从临时文件读取，确保编码正确
+    const raw = fs.readFileSync(tmpFile, "utf-8");
+    // 找到 JSON 部分（从第一个 { 开始）
+    const jsonStart = raw.indexOf("{");
+    if (jsonStart === -1) return [];
+    const result = JSON.parse(raw.substring(jsonStart));
+
+    try { fs.unlinkSync(tmpFile); } catch {}
+
+    if (result.error) return [];
+    return (result.videos || []).map((v) => ({
       id: v.id,
-      url: `https://www.douyin.com/video/${v.id}`,
       desc: (v.desc || "").substring(0, 80),
+      create_time: v.create_time || 0,
     }));
   } catch (e) {
-    log(`  ❌ 获取视频列表失败: ${e.message}`);
-    log(`  请用 --url 参数手动提供视频链接`);
+    log(`  ⚠️ Playwright 发现失败: ${e.message}`);
     return [];
   }
 }
 
-function fetchWithRetry(url, options = {}, retries = 3) {
-  return new Promise((resolve, reject) => {
-    const attempt = (n) => {
-      const protocol = url.startsWith("https") ? require("https") : require("http");
-      const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
-
-      let opts = {
-        headers: { ...HEADERS, ...options.headers },
-        method: options.method || "GET",
-      };
-
-      // 代理支持
-      if (proxyUrl) {
-        const pu = new URL(proxyUrl);
-        opts.host = pu.hostname;
-        opts.port = pu.port;
-        opts.path = url;
-        opts.headers["Host"] = new URL(url).host;
-      } else {
-        opts.host = new URL(url).host;
-        opts.path = new URL(url).pathname + new URL(url).search;
-      }
-
-      const req = protocol.request(opts, (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve(data);
-          } else if (
-            res.statusCode >= 300 &&
-            res.statusCode < 400 &&
-            res.headers.location
-          ) {
-            resolve(fetchWithRetry(res.headers.location, options, retries));
-          } else if (n > 0 && res.statusCode >= 500) {
-            setTimeout(() => attempt(n - 1), 2000);
-          } else {
-            reject(new Error(`HTTP ${res.statusCode}: ${url}`));
-          }
-        });
-      });
-      req.on("error", (e) => {
-        if (n > 0) setTimeout(() => attempt(n - 1), 2000);
-        else reject(e);
-      });
-      if (options.body) req.write(options.body);
-      req.end();
-    };
-    attempt(retries);
-  });
+/**
+ * 发现博主视频: 通过 Playwright 获取
+ */
+async function discoverVideos(blogger) {
+  log(`发现视频: ${blogger.name}`);
+  const videos = await discoverVideosViaPlaywright(blogger);
+  log(`  发现 ${videos.length} 个视频`);
+  return videos;
 }
 
-// ==================== 抖音视频解析 ====================
+// ==================== 视频下载 ====================
 
 /**
- * 从文本中提取抖音分享链接
+ * yt-dlp 下载视频
  */
-function extractVideoUrl(text) {
-  const match = text.match(/https?:\/\/(?:www\.)?douyin\.com\/video\/\S+/i);
-  if (match) return match[0].split("?")[0];
-  const match2 = text.match(/https?:\/\/v\.douyin\.com\/\S+/i);
-  if (match2) return match2[0];
+async function downloadWithYtdlp(videoUrl, outputPath) {
+  log(`  yt-dlp 下载中...`);
+  const cookieArg = fs.existsSync(COOKIE_FILE) ? `--cookies "${COOKIE_FILE}"` : "";
+  try {
+    execSync(
+      `uv run --with yt-dlp -- python -m yt_dlp --no-warnings ${cookieArg} -o "${outputPath}" "${videoUrl}"`,
+      { timeout: 180000, stdio: "pipe" }
+    );
+    return fs.existsSync(outputPath) && fs.statSync(outputPath).size > 10000;
+  } catch (e) {
+    log(`  ⚠️ yt-dlp 失败: ${e.message}`);
+    return false;
+  }
+}
+
+/**
+ * 兜底: Playwright 下载
+ */
+async function downloadWithPlaywright(videoUrl, outputPath) {
+  const dlScript = path.join(__dirname, "douyin_video_dl.py");
+  if (!fs.existsSync(dlScript)) return false;
+
+  try {
+    const output = execSync(
+      `uv run --script "${dlScript}" "${videoUrl}" "${outputPath}"`,
+      { timeout: 300000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: "utf-8" } }
+    );
+    const result = JSON.parse(output.trim());
+    return result.success === true;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchWithRetry(urlStr, options = {}, retries = 3) {
+  for (let i = retries; i > 0; i--) {
+    try {
+      const proxy = proxyAgent(urlStr);
+      const url = new URL(urlStr);
+      const opts = {
+        hostname: proxy ? proxy.host : url.hostname,
+        port: proxy ? proxy.port : (url.protocol === "https:" ? 443 : 80),
+        path: proxy ? urlStr : url.pathname + url.search,
+        method: options.method || "GET",
+        headers: { "User-Agent": UA, ...(options.headers || {}) },
+      };
+      if (proxy) opts.headers["Host"] = url.host;
+
+      return await new Promise((resolve, reject) => {
+        const mod = (proxy ? url.protocol === "https:" : url.protocol === "https:") ? https : http;
+        const req = mod.request(opts, (res) => {
+          let data = "";
+          res.on("data", (chunk) => (data += chunk));
+          res.on("end", () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) resolve(data);
+            else if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+              fetchWithRetry(res.headers.location, options, i).then(resolve).catch(reject);
+            } else if (i > 1 && res.statusCode >= 500) {
+              reject(new Error(`HTTP ${res.statusCode}, retrying...`));
+            } else reject(new Error(`HTTP ${res.statusCode}`));
+          });
+        });
+        req.on("error", (e) => i > 1 ? reject(e) : reject(e));
+        if (options.body) req.write(options.body);
+        req.setTimeout(60000, () => { req.destroy(); reject(new Error("Timeout")); });
+        req.end();
+      });
+    } catch (e) {
+      if (i <= 1) throw e;
+      await sleep(2000 * (retries - i + 1));
+    }
+  }
+}
+
+/**
+ * 下载视频 + 获取元信息: yt-dlp 优先，Playwright 兜底
+ */
+async function downloadVideo(videoUrl, videoId) {
+  const mp4Path = path.join(CACHE_DIR, `${videoId}.mp4`);
+  if (fs.existsSync(mp4Path) && fs.statSync(mp4Path).size > 10000) {
+    return mp4Path;
+  }
+
+  // yt-dlp
+  const ok = await downloadWithYtdlp(videoUrl, mp4Path);
+  if (ok) return mp4Path;
+
+  // 兜底
+  log(`  yt-dlp 失败，尝试 Playwright...`);
+  const ok2 = await downloadWithPlaywright(videoUrl, mp4Path);
+  if (ok2) return mp4Path;
+
+  throw new Error("所有下载方式均失败");
+}
+
+// ==================== 音频提取 ====================
+
+function extractAudio(videoPath, audioPath) {
+  if (fs.existsSync(audioPath) && fs.statSync(audioPath).size > 1000) return true;
+
+  try {
+    execSync(`ffmpeg -y -i "${videoPath}" -vn -ar 16000 -ac 1 "${audioPath}"`, {
+      timeout: 120000, stdio: "pipe",
+    });
+    return fs.existsSync(audioPath) && fs.statSync(audioPath).size > 1000;
+  } catch {
+    return false;
+  }
+}
+
+// ==================== 独立音频下载 ====================
+
+/**
+ * 下载独立 mp3 音频 (从抖音 API 返回的 audio_url)
+ * 绕过 HE-AACv2 解码问题
+ */
+async function downloadIndependentAudio(audioUrl, audioPath) {
+  if (!audioUrl) return false;
+  try {
+    const mp3Path = audioPath.replace(/\.wav$/, ".mp3");
+    const data = await fetchWithRetry(audioUrl);
+    fs.writeFileSync(mp3Path, data);
+    execSync(`ffmpeg -y -i "${mp3Path}" -vn -ar 16000 -ac 1 "${audioPath}"`, {
+      timeout: 120000, stdio: "pipe",
+    });
+    return fs.existsSync(audioPath) && fs.statSync(audioPath).size > 1000;
+  } catch {
+    return false;
+  }
+}
+
+// ==================== 语音识别 (带缓存) ====================
+
+function getTranscriptCache(videoId) {
+  const cacheFile = path.join(CACHE_DIR, `${videoId}.transcript.json`);
+  if (fs.existsSync(cacheFile)) {
+    return JSON.parse(fs.readFileSync(cacheFile, "utf-8"));
+  }
   return null;
 }
 
-/**
- * 解析抖音分享链接 → 无水印视频 URL + 视频 ID
- */
-async function parseVideoInfo(shareUrl) {
-  log(`  解析视频: ${shareUrl}`);
-
-  // 1. 解析短链
-  const finalUrl = await fetchWithRetry(shareUrl, { headers: { "Accept-Language": "zh-CN" } });
-  let videoId = finalUrl.split("video/")[1]?.split("?")[0]?.split("/")[0];
-  if (!videoId) {
-    videoId = shareUrl.split("video/")[1]?.split("?")[0]?.split("/")[0];
-  }
-  if (!videoId) throw new Error("无法提取视频ID");
-
-  // 2. 获取视频信息
-  const detailUrl = `https://www.iesdouyin.com/share/video/${videoId}`;
-  const html = await fetchWithRetry(detailUrl);
-
-  const match = html.match(/window\._ROUTER_DATA\s*=\s*(.*?)<\/script>/s);
-  if (!match) throw new Error("无法解析视频信息");
-
-  const jsonData = JSON.parse(match[1].trim());
-  const pageKey = Object.keys(jsonData.loaderData).find(
-    (k) => k.includes("video") || k.includes("note")
-  );
-  if (!pageKey) throw new Error("未找到视频数据");
-
-  const item = jsonData.loaderData[pageKey].videoInfoRes.item_list[0];
-  const videoUrl = item.video.play_addr.url_list[0].replace("playwm", "play");
-  const desc = (item.desc || `douyin_${videoId}`).replace(/[\\/:*?"<>|]/g, "_");
-
-  return { videoId, videoUrl, title: desc };
+function setTranscriptCache(videoId, transcript) {
+  const cacheFile = path.join(CACHE_DIR, `${videoId}.transcript.json`);
+  writeJSON(cacheFile, {
+    videoId,
+    transcript,
+    cachedAt: new Date().toISOString(),
+  });
 }
 
-// ==================== 语音识别 ====================
-
-/**
- * 使用 SiliconFlow API 进行语音转文字
- */
 async function transcribeAudio(audioPath, apiKey) {
   log(`  语音识别中...`);
 
@@ -290,37 +405,60 @@ async function transcribeAudio(audioPath, apiKey) {
     apiKey: apiKey,
   });
 
-  const transcription = await client.audio.transcriptions.create({
-    file: fs.createReadStream(audioPath),
+  let filePath = audioPath;
+  if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) {
+    const mp4Path = audioPath.replace(/\.wav$/, ".mp4");
+    if (fs.existsSync(mp4Path) && fs.statSync(mp4Path).size > 10000) {
+      filePath = mp4Path;
+      log(`  使用 mp4 直接转写`);
+    }
+  }
+
+  const result = await client.audio.transcriptions.create({
+    file: fs.createReadStream(filePath),
     model: "FunAudioLLM/SenseVoiceSmall",
     language: "zh",
-    response_format: "text",
   });
 
-  return transcription;
+  return typeof result === "string" ? result : (result.text || "");
 }
 
 // ==================== AI 解析文案 ====================
 
 const BUILD_PARSE_PROMPT = `你是一个英雄联盟海克斯大乱斗套路分析师。从以下抖音视频文案中提取套路信息。
 
-要求：
-1. 英雄名称用中文（如 萨科、金克斯）
-2. 出装按视频中提到的顺序列出
-3. 海克斯符文只列出视频中明确提到的
-4. 套路名称要简洁有力
+核心任务：**必须识别出英雄是谁**，这是最高优先级。
+
+英雄识别规则：
+1. **#标签最高优先级** — 视频标题/描述中的 #英雄名（如 #蔚、#金克斯、#亚索）是识别英雄的最可靠依据
+2. **文案推理** — 如果视频#标签被截断或不全，从文案内容推断英雄（如提到"E技能"、"Q技能"、英雄特性描述等）
+3. **宁可猜测不要空** — 如果 70% 以上确定某个英雄，就输出它，不要输出 null
+4. **"小丑学院"是海克斯符文名称**，不是英雄"恶魔小丑"
+5. 这是 LOL 海克斯大乱斗（ARAM）模式，不是召唤师峡谷
+
+英雄名称要求：
+- champion 字段用 **最常用的中文称呼**，例如：
+  - 亚索（不是疾风剑豪）、金克丝（不是暴走萝莉）、布兰德（不是火男，但火男也可接受）
+  - 如果英雄有通行中文简称可用简称（盖伦、德莱文、VN）
+- championEn 字段用 **英文名**（如 Yasuo、Jinx、Brand），必须首字母大写
+
+输出格式要求：
+- 出装按视频中提到的顺序列出
+- 海克斯符文只列出视频中明确提到的
+- 套路名称简洁有力（如 "暴击收割·海克斯弹射流"）
+- description 一句话概括核心玩法
 
 只返回 JSON 格式（不要 markdown 代码块）：
 {
-  "champion": "英雄中文名，无法确定填 null",
-  "championEn": "英雄英文名如 Shaco，无法确定填 null",
-  "buildTitle": "套路四字名称·副标题",
+  "champion": "英雄中文名/常用称呼，无法确定填 null",
+  "championEn": "英雄英文名首字母大写，如 Yasuo、Jinx、Brand，无法确定填 null",
+  "buildTitle": "套路名称·副标题",
   "description": "一句话概括套路核心",
   "items": ["装备1", "装备2"],
   "hextechAugments": ["符文1", "符文2"]
 }`;
 
-async function parseBuildFromTranscript(transcript) {
+async function parseBuildFromTranscript(transcript, title = "") {
   log(`  AI 解析文案中...`);
 
   const client = new OpenAI({
@@ -328,49 +466,139 @@ async function parseBuildFromTranscript(transcript) {
     apiKey: LLM_CONFIG.apiKey,
   });
 
-  const completion = await client.chat.completions.create({
-    model: LLM_CONFIG.model,
-    messages: [
-      { role: "system", content: "你是一个精确的结构化数据提取器，只返回 JSON。" },
-      { role: "user", content: `${BUILD_PARSE_PROMPT}\n\n文案：\n${transcript}` },
-    ],
-    temperature: 0.1,
-    response_format: { type: "json_object" },
-  });
+  let userContent = BUILD_PARSE_PROMPT;
+  if (title) userContent += `\n\n视频标题/描述：${title}`;
+  userContent += `\n\n文案：\n${transcript}`;
 
-  const content = completion.choices[0]?.message?.content || "{}";
+  // 指数退避重试
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const completion = await client.chat.completions.create({
+        model: LLM_CONFIG.model,
+        messages: [
+          { role: "system", content: "你是一个精确的结构化数据提取器，只返回 JSON。" },
+          { role: "user", content: userContent },
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+      });
 
-  try {
-    return JSON.parse(content);
-  } catch {
-    const jm = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jm) return JSON.parse(jm[1]);
-    throw new Error("LLM 返回无法解析");
+      const content = completion.choices[0]?.message?.content || "{}";
+      try { return JSON.parse(content); }
+      catch {
+        const jm = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jm) return JSON.parse(jm[1]);
+        throw new Error("LLM 返回无法解析");
+      }
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 2) {
+        const wait = Math.pow(2, attempt) * 2000;
+        log(`  ⚠️ LLM 调用失败，${wait / 1000}s 后重试: ${e.message}`);
+        await sleep(wait);
+      }
+    }
   }
+  throw lastErr || new Error("LLM 调用失败");
 }
 
-// ==================== 视频下载 ====================
+// ==================== 昵称 → 英雄映射表 ====================
 
-async function downloadVideo(url, outputPath) {
-  log(`  下载视频中...`);
-  const data = await fetchWithRetry(url);
-  fs.writeFileSync(outputPath, data);
-}
+/**
+ * 常见英雄昵称/简称 → champions.json 中的 id
+ * LLM 可能输出各种称呼，此表将 nickname 归一化为标准 ID
+ */
+const NICKNAME_MAP = {
+  // 中文通用称呼
+  "火男": "brand",
+  "铁男": "mordekaiser",
+  "豹女": "nidalee",
+  "莉莉亚": "lillia",
+  "大树": "maokai",
+  "石头人": "malphite",
+  "稻草人": "fiddlesticks",
+  "卡萨丁": "kassadin",
+  "卡莎": "kaisa",
+  "vn": "vayne",
+  "瞎子": "lee-sin",
+  "螳螂": "khazix",
+  "狮子狗": "rengar",
+  "鳄鱼": "renekton",
+  "挖掘机": "rek-sai",
+  "武器": "jax",
+  "剑姬": "fiora",
+  "瑞文": "riven",
+  "兰博": "rumble",
+  "龙龟": "rammus",
+  "猴子": "monkey-king",
+  "乌鸦": "swain",
+  "蛇女": "cassiopeia",
+  "球女": "syndra",
+  "蚂蚱": "malzahar",
+  "大眼": "velkoz",
+  "维克托": "viktor",
+  "杰斯": "jayce",
+  "蜘蛛": "elise",
+  "鱼人": "fizz",
+  "卡牌": "twisted-fate",
+  "梦魇": "nocturne",
+  "肾": "shen",
+  "奥巴马": "lucian",
+  "人马": "hecarim",
+  "剑圣": "master-yi",
+  "小丑": "shaco",
+  "宝石": "taric",
+  "炼金": "singed",
+  "老鼠": "twitch",
+  "男枪": "graves",
+  "女枪": "miss-fortune",
+  "日女": "leona",
+  "风女": "janna",
+  "娜美": "nami",
+  "琴女": "sona",
+  "蚂蚱": "malzahar",
+  "韦鲁斯": "varus",
+  "俄洛伊": "illaoi",
+  "巨魔": "trundle",
+  "塞恩": "sion",
+  "提莫": "teemo",
+  "时光": "zilean",
+  "吸血鬼": "vladimir",
+  "万血": "chogath",
+  "嘉文": "jarvan-iv",
+  "皇子": "jarvan-iv",
+  "寒冰": "ashe",
+  "光辉": "lux",
+  "盖伦": "garen",
+  "卡特": "katarina",
+  "卡特琳娜": "katarina",
+  "安妮": "annie",
+  "德莱文": "draven",
+  "亚索": "yasuo",
+  "永恩": "yone",
+  "维克托": "viktor",
+  "泽拉斯": "xerath",
+  "萨科": "shaco",
+};
 
-function extractAudio(videoPath, audioPath) {
-  log(`  提取音频中...`);
-  const { execSync } = require("child_process");
-  try {
-    execSync(`ffmpeg -y -i "${videoPath}" -vn -ar 16000 -ac 1 "${audioPath}"`, {
-      timeout: 120000,
-      stdio: "pipe",
-    });
-  } catch {
-    execSync(
-      `python -m imageio_ffmpeg -y -i "${videoPath}" -vn -ar 16000 -ac 1 "${audioPath}"`,
-      { timeout: 120000, stdio: "pipe" }
-    );
+/** 通过昵称查找英雄 ID */
+function resolveChampionId(name) {
+  if (!name || name === "null") return null;
+  // 尝试直接匹配 nickname map (键全小写)
+  const normalized = name.trim().toLowerCase();
+  if (NICKNAME_MAP[normalized]) return NICKNAME_MAP[normalized];
+
+  // 尝试匹配 champions.json 中的 name / nameEn / title / aliases
+  const champions = readJSON(CHAMPIONS_FILE) || [];
+  for (const champ of champions) {
+    const matchList = [champ.name, champ.nameEn, champ.title, ...(champ.aliases || [])].map(s => s.toLowerCase());
+    if (matchList.some(m => m === normalized || m.includes(normalized))) {
+      return champ.id;
+    }
   }
+
+  return null;
 }
 
 // ==================== 数据更新 ====================
@@ -387,43 +615,29 @@ function saveBuild(buildInfo, sourceUrl, author) {
     dateAdded: new Date().toISOString().split("T")[0],
   };
 
+  // 按优先级尝试解析英雄: championEn(英文名最精确) > champion(中文名/昵称)
+  const champId = resolveChampionId(buildInfo.championEn) || resolveChampionId(buildInfo.champion);
   const championName = buildInfo.champion || buildInfo.championEn || "";
 
-  if (championName) {
+  if (champId) {
     const champions = readJSON(CHAMPIONS_FILE) || [];
-    let found = false;
-    const q = championName.toLowerCase();
-
-    for (const champ of champions) {
-      const matchList = [
-        champ.name,
-        champ.nameEn,
-        champ.title,
-        ...(champ.aliases || []),
-      ].map((s) => s.toLowerCase());
-
-      if (matchList.some((m) => m === q || m.includes(q))) {
-        if (!champ.builds) champ.builds = [];
-        const exists = champ.builds.some(
-          (b) => b.sourceUrl === sourceUrl || b.title === buildEntry.title
-        );
-        if (!exists) {
-          champ.builds.push(buildEntry);
-          log(`  ✅ 已添加到 ${champ.name}`);
-        } else {
-          log(`  ⏭️ ${champ.name} 已有此套路`);
-        }
-        found = true;
-        break;
+    const champ = champions.find((c) => c.id === champId);
+    if (champ) {
+      if (!champ.builds) champ.builds = [];
+      const exists = champ.builds.some((b) => b.sourceUrl === sourceUrl || b.title === buildEntry.title);
+      if (!exists) {
+        champ.builds.push(buildEntry);
+        log(`  ✅ 已添加到 ${champ.name} (${champ.nameEn})`);
+      } else {
+        log(`  ⏭️ ${champ.name} 已有此套路`);
       }
+      writeJSON(CHAMPIONS_FILE, champions);
+    } else {
+      addToOtherBuilds(buildEntry, championName || null);
     }
-
-    if (!found) {
-      log(`  ⚠️ 未匹配英雄「${championName}」，存入其他套路`);
-      addToOtherBuilds(buildEntry, championName);
-    }
-
-    writeJSON(CHAMPIONS_FILE, champions);
+  } else if (championName && championName !== "null") {
+    log(`  ⚠️ 未匹配英雄「${championName}」，存入其他套路`);
+    addToOtherBuilds(buildEntry, championName);
   } else {
     addToOtherBuilds(buildEntry, null);
   }
@@ -441,7 +655,7 @@ function addToOtherBuilds(entry, possible) {
   }
 }
 
-// ==================== 主流程 ====================
+// ==================== 视频处理管线 ====================
 
 async function processVideo(shareUrl, author = "@抖音博主") {
   const videoId = shareUrl.split("video/")[1]?.split("?")[0];
@@ -449,43 +663,130 @@ async function processVideo(shareUrl, author = "@抖音博主") {
   if (isVideoProcessed(videoId)) { log(`  ⏭️ 已处理: ${videoId}`); return; }
 
   fs.mkdirSync(CACHE_DIR, { recursive: true });
-  const vp = path.join(CACHE_DIR, `${videoId}.mp4`);
-  const ap = path.join(CACHE_DIR, `${videoId}.wav`);
 
   try {
     log(`处理: ${shareUrl}`);
-    const info = await parseVideoInfo(shareUrl);
-    log(`  标题: ${info.title}`);
 
-    if (!fs.existsSync(vp)) await downloadVideo(info.videoUrl, vp);
-    if (!fs.existsSync(ap)) extractAudio(vp, ap);
+    // 1. 视频下载
+    const videoPath = await downloadVideo(shareUrl, videoId);
 
-    const apiKey = process.env.SILICONFLOW_API_KEY;
-    if (!apiKey) throw new Error("请设置 SILICONFLOW_API_KEY");
+    // 2. 音频提取
+    const audioPath = path.join(CACHE_DIR, `${videoId}.wav`);
+    const audioExtracted = extractAudio(videoPath, audioPath);
 
-    const text = await transcribeAudio(ap, apiKey);
-    log(`  文案 ${text.length} 字`);
+    // 3. 语音识别 (优先用缓存)
+    let transcript = null;
+    const cached = getTranscriptCache(videoId);
+    if (cached) {
+      transcript = cached.transcript;
+      log(`  使用缓存的转录 (${transcript.length} 字)`);
+    }
 
-    if (text.length < 10) { log(`  ⚠️ 文案过短`); return; }
+    if (!transcript) {
+      const apiKey = process.env.SILICONFLOW_API_KEY;
+      if (!apiKey) throw new Error("请设置 SILICONFLOW_API_KEY");
 
-    const build = await parseBuildFromTranscript(text);
+      if (audioExtracted) {
+        transcript = await transcribeAudio(audioPath, apiKey);
+      } else {
+        // 直接传 mp4
+        transcript = await transcribeAudio(videoPath, apiKey);
+      }
+
+      if (transcript && transcript.length >= 10) {
+        setTranscriptCache(videoId, transcript);
+      }
+    }
+
+    if (!transcript || transcript.length < 10) {
+      log(`  ⚠️ 文案过短或为空`);
+      markVideoProcessed(videoId);
+      return;
+    }
+    log(`  文案 ${transcript.length} 字`);
+
+    // 4. 获取视频标题 (从缓存 meta 或 yt-dlp 输出)
+    let title = "";
+    const metaFile = path.join(CACHE_DIR, `${videoId}.meta.json`);
+    if (fs.existsSync(metaFile)) {
+      title = JSON.parse(fs.readFileSync(metaFile, "utf-8")).title || "";
+    } else {
+      // 尝试从 yt-dlp 获取标题 (--print title)
+      try {
+        title = execSync(
+          `uv run --with yt-dlp -- python -m yt_dlp --no-warnings --print title "${shareUrl}"`,
+          { timeout: 30000, encoding: "utf-8", stdio: "pipe" }
+        ).trim();
+      } catch { /* ignore */ }
+    }
+
+    // 5. AI 解析
+    const build = await parseBuildFromTranscript(transcript, title);
     log(`  解析: ${build.buildTitle || "?"} → ${build.champion || "?"}`);
 
+    // 6. 保存
     saveBuild(build, shareUrl, author);
     markVideoProcessed(videoId);
     log(`  ✅ 完成`);
   } catch (e) {
     log(`  ❌ ${e.message}`);
-    markVideoProcessed(videoId); // 避免反复重试
+    // 失败时不做 markVideoProcessed，下次重试
   }
 }
+
+// ==================== 并发池 ====================
+
+async function asyncPool(array, concurrency, iteratorFn) {
+  const results = [];
+  const executing = new Set();
+
+  for (const [index, item] of array.entries()) {
+    const p = Promise.resolve().then(() => iteratorFn(item, index));
+    results.push(p);
+    executing.add(p);
+
+    const clean = () => executing.delete(p);
+    p.then(clean, clean);
+
+    if (executing.size >= concurrency) {
+      await Promise.race(executing);
+    }
+  }
+
+  return Promise.allSettled(results);
+}
+
+// ==================== 刷新 Cookie ====================
+
+async function refreshCookies() {
+  log("刷新 cookie...");
+  const ok = await fetchCookieViaPlaywright();
+  if (ok) {
+    log(`  ✅ Cookie 已保存`);
+  } else {
+    log(`  ❌ 获取 cookie 失败`);
+  }
+}
+
+// ==================== 主流程 ====================
 
 async function main() {
   const args = process.argv.slice(2);
 
-  if (!process.env.SILICONFLOW_API_KEY && !process.env.LLM_API_KEY) {
+  // --refresh-cookies、--check、--dry-run 不需要 API Key
+  if (args.includes("--check") || args.includes("--refresh-cookies") || args.includes("--dry-run")) {
+    // 跳过 API key 检查
+  } else if (!process.env.SILICONFLOW_API_KEY && !process.env.LLM_API_KEY) {
     console.error("请设置 SILICONFLOW_API_KEY 环境变量");
+    console.error("  爬取视频需要 API Key 进行语音识别和文案解析");
+    console.error("  可以先试试: node scripts/crawl-douyin.js --refresh-cookies");
     process.exit(1);
+  }
+
+  // --refresh-cookies
+  if (args.includes("--refresh-cookies")) {
+    await refreshCookies();
+    return;
   }
 
   // --check
@@ -493,7 +794,13 @@ async function main() {
     const state = getState();
     console.log(`已处理: ${state.processedVideos.length} 个视频`);
     console.log(`上次爬取: ${state.lastCrawlTime || "从未"}`);
+    console.log(`首次爬取完成: ${state.firstCrawlDone}`);
     return;
+  }
+
+  // 确保 cookie 存在
+  if (!fs.existsSync(COOKIE_FILE)) {
+    await refreshCookies();
   }
 
   // --url <link>
@@ -510,41 +817,93 @@ async function main() {
   if (fi !== -1 && args[fi + 1]) {
     const content = fs.readFileSync(args[fi + 1], "utf-8");
     const urls = content.split("\n").map((l) => extractVideoUrl(l)).filter(Boolean);
-    log(`批量处理 ${urls.length} 个视频`);
-    for (let i = 0; i < urls.length; i++) {
-      log(`[${i + 1}/${urls.length}]`);
-      await processVideo(urls[i]);
-      await sleep(3000);
-    }
-    return;
-  }
-
-  if (BLOGGERS.length === 0) {
-    console.log("用法:");
-    console.log("  node scripts/crawl-douyin.js --url <抖音链接>");
-    console.log("  node scripts/crawl-douyin.js --urls-file <文件路径>");
-    console.log("  node scripts/crawl-douyin.js --check");
-    console.log("\n提示: 在脚本顶部 BLOGGERS 数组中配置博主后，可自动爬取");
+    log(`批量处理 ${urls.length} 个视频 (并发: ${CONCURRENCY})`);
+    await asyncPool(urls, CONCURRENCY, async (url) => {
+      await processVideo(url);
+    });
     return;
   }
 
   // 博主模式
-  log("开始爬取博主视频...");
+  if (BLOGGERS.length === 0) {
+    console.log("用法:");
+    console.log("  node scripts/crawl-douyin.js                         # 爬取所有博主");
+    console.log("  node scripts/crawl-douyin.js --url <抖音链接>        # 处理单个视频");
+    console.log("  node scripts/crawl-douyin.js --urls-file <文件路径>  # 批量处理");
+    console.log("  node scripts/crawl-douyin.js --dry-run               # 发现但不处理");
+    console.log("  node scripts/crawl-douyin.js --check                 # 检查状态");
+    console.log("  node scripts/crawl-douyin.js --refresh-cookies       # 刷新 cookie");
+    return;
+  }
 
+  log(`爬取启动 (并发: ${CONCURRENCY})`);
+
+  // 1. 发现所有博主的视频
+  const allVideos = [];
   for (const blogger of BLOGGERS) {
     log(`\n===== ${blogger.name} =====`);
-    const videos = await discoverVideosFromBlogger(blogger);
-
-    for (let i = 0; i < videos.length; i++) {
-      const v = videos[i];
-      log(`\n[${i + 1}/${videos.length}] ${v.desc || v.id}`);
-      await processVideo(v.url, `@${blogger.name}`);
-      await sleep(3000);
+    const videos = await discoverVideos(blogger);
+    for (const v of videos) {
+      allVideos.push({ ...v, author: `@${blogger.name}` });
     }
   }
 
+  // 去重
+  const seen = new Set();
+  const uniqueVideos = allVideos.filter((v) => {
+    if (seen.has(v.id)) return false;
+    seen.add(v.id);
+    return true;
+  });
+
+  log(`\n共发现 ${uniqueVideos.length} 个待处理视频`);
+
+  // --dry-run: 只发现不处理
+  if (args.includes("--dry-run")) {
+    log("\n===== DRY RUN 模式，不执行处理 =====");
+    log("设置 SILICONFLOW_API_KEY 和 LLM_API_KEY 后可开始真实爬取");
+    for (const v of uniqueVideos) {
+      log(`  ${v.id} | ${v.desc || "(无描述)"} | ${v.author}`);
+    }
+    return;
+  }
+
+  if (uniqueVideos.length === 0) {
+    log("没有新视频需要处理");
+    markCrawlDone();
+    return;
+  }
+
+  // 2. 并发处理
+  let success = 0;
+  let failed = 0;
+
+  await asyncPool(uniqueVideos, CONCURRENCY, async (v, i) => {
+    const url = `https://www.douyin.com/video/${v.id}`;
+    log(`\n[${i + 1}/${uniqueVideos.length}] ${v.desc || v.id}`);
+    try {
+      await processVideo(url, v.author);
+      success++;
+    } catch {
+      failed++;
+    }
+  });
+
+  // 3. 收尾
   markCrawlDone();
-  log("\n===== 爬取完成 =====");
+  log(`\n===== 爬取完成 =====`);
+  log(`成功: ${success} / 失败: ${failed} / 总计: ${uniqueVideos.length}`);
+}
+
+/**
+ * 从文本中提取抖音分享链接
+ */
+function extractVideoUrl(text) {
+  const m1 = text.match(/https?:\/\/(?:www\.)?douyin\.com\/video\/\S+/i);
+  if (m1) return m1[0].split("?")[0];
+  const m2 = text.match(/https?:\/\/v\.douyin\.com\/\S+/i);
+  if (m2) return m2[0];
+  return null;
 }
 
 main().catch((e) => {

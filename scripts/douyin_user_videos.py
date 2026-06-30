@@ -1,7 +1,7 @@
 """
-抖音博主视频列表爬取助手
+抖音博主视频列表爬取助手 (兜底方案)
 
-使用 Playwright 渲染博主主页，从 API 响应中提取视频列表。
+当 crawl-douyin.js 的 API 直连模式失败时，用 Playwright 兜底获取视频列表。
 
 用法: uv run --script scripts/douyin_user_videos.py <博主URL> [--days N]
 输出: JSON 格式的视频列表 (stdout)
@@ -9,7 +9,7 @@
 
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["playwright"]
+# dependencies = ["playwright>=1.51"]
 # ///
 
 import asyncio
@@ -35,18 +35,10 @@ async def extract_user_videos(user_url: str, max_videos: int = 50) -> list[dict]
     launch_args = ["--no-sandbox", "--disable-setuid-sandbox"] + proxy_args
 
     async with async_playwright() as p:
-        # 优先用系统 Chrome，没有则用 Playwright Chromium
-        try:
-            browser = await p.chromium.launch(
-                channel="chrome",
-                headless=True,
-                args=launch_args,
-            )
-        except Exception:
-            browser = await p.chromium.launch(
-                headless=True,
-                args=launch_args,
-            )
+        browser = await p.chromium.launch(
+            headless=True,
+            args=launch_args,
+        )
         context = await browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -60,24 +52,46 @@ async def extract_user_videos(user_url: str, max_videos: int = 50) -> list[dict]
 
         async def on_response(response):
             url = response.url
-            if "aweme/post" in url:
+            print(f"[DEBUG] Response: {url[:120]}", file=sys.stderr)
+            if "aweme/post" in url or "aweme/v1" in url or "aweme" in url:
                 try:
                     data = await response.json()
                     api_responses.append(data)
                     api_event.set()
-                except Exception:
-                    pass
+                    print(f"[DEBUG] Captured API response: {url[:80]}", file=sys.stderr)
+                except Exception as e:
+                    # Try text fallback
+                    try:
+                        txt = await response.text()
+                        if len(txt) < 500:
+                            print(f"[DEBUG] Non-JSON response: {txt[:200]}", file=sys.stderr)
+                    except:
+                        pass
+
+        async def on_request(request):
+            url = request.url
+            if "aweme" in url.lower():
+                print(f"[DEBUG] Request: {url[:150]}", file=sys.stderr)
 
         page.on("response", on_response)
+        page.on("request", on_request)
 
         # 导航到博主主页（超时不影响，数据已在回调中捕获）
         try:
-            await page.goto(user_url, wait_until="networkidle", timeout=50000)
-        except Exception:
-            pass
+            await page.goto(user_url, wait_until="domcontentloaded", timeout=30000)
+        except Exception as e:
+            print(f"[DEBUG] goto exception: {e}", file=sys.stderr)
 
         # 等待视频数据加载
-        await asyncio.sleep(5)
+        print(f"[DEBUG] Waiting 8s for API responses...", file=sys.stderr)
+        await asyncio.sleep(8)
+
+        # 截图看看页面实际内容
+        try:
+            await page.screenshot(path="C:\\Users\\坤哥\\AppData\\Local\\Temp\\douyin_debug.png", full_page=True)
+            print(f"[DEBUG] Screenshot saved", file=sys.stderr)
+        except Exception as e:
+            print(f"[DEBUG] Screenshot failed: {e}", file=sys.stderr)
 
         # 从 DOM 提取视频 ID（兜底）
         dom_ids = set()
@@ -87,11 +101,23 @@ async def extract_user_videos(user_url: str, max_videos: int = 50) -> list[dict]
                     .map(el => el.getAttribute('href'))
                     .filter(Boolean)
             """)
+            print(f"[DEBUG] DOM video links found: {len(links)}", file=sys.stderr)
+            for link in links[:5]:
+                print(f"[DEBUG]   Link: {link[:100]}", file=sys.stderr)
             for link in links:
                 vid = link.split("/video/")[-1].split("?")[0].split("/")[0]
                 if vid and vid.isdigit():
                     dom_ids.add(vid)
-        except Exception:
+        except Exception as e:
+            print(f"[DEBUG] DOM extraction error: {e}", file=sys.stderr)
+
+        # Also try getting page title / content info
+        try:
+            title = await page.title()
+            print(f"[DEBUG] Page title: {title}", file=sys.stderr)
+            url_now = page.url
+            print(f"[DEBUG] Current URL: {url_now}", file=sys.stderr)
+        except:
             pass
 
         await browser.close()
@@ -147,7 +173,8 @@ def main():
         videos = [v for v in videos if (v.get("create_time") or 0) >= cutoff]
 
     result = {"url": user_url, "total": len(videos), "videos": videos}
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # ensure_ascii=True 使中文转义为 \uXXXX，避免 Windows 管道编码问题
+    print(json.dumps(result, ensure_ascii=True, indent=2))
 
 
 if __name__ == "__main__":

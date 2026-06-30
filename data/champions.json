@@ -52,6 +52,29 @@
     "types": [
       "坦克",
       "辅助"
+    ],
+    "builds": [
+      {
+        "title": "高压灼烧·无解熔牛",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651969520092876078",
+        "description": "利用高压锅符文叠加灼烧，搭配生命值与法强装备，持续灼伤敌人，能抗能打。",
+        "items": [
+          "熔渣",
+          "心之钢",
+          "深渊面具",
+          "放血者诅咒",
+          "狂徒",
+          "璀璨回响"
+        ],
+        "hextechAugments": [
+          "高压锅",
+          "坦克克星",
+          "巫术女王"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -74,6 +97,31 @@
     "types": [
       "坦克",
       "辅助"
+    ],
+    "builds": [
+      {
+        "title": "六重真伤·高压锅灼烧流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653778476104731939",
+        "description": "利用高压锅灼烧配合阿木木被动真伤与多件法穿装备，叠加六重真伤，轻松灼烧全场。",
+        "items": [
+          "心之钢",
+          "放血者诅咒",
+          "无终恨意",
+          "一验",
+          "深渊面具",
+          "日炎圣盾"
+        ],
+        "hextechAugments": [
+          "小丑学院",
+          "钢化你心",
+          "献祭",
+          "捕苏熔渣",
+          "大师铸就"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -84,6 +132,22 @@
     "aliases": [],
     "types": [
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "冰墙灼烧·无限微波流",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651840606620130980",
+        "description": "利用地形专家赋予冰墙持续灼烧，配合大法师和术士无限刷新冰墙，打造全场微波炉",
+        "items": [],
+        "hextechAugments": [
+          "地形专家",
+          "大法师",
+          "术士"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -118,6 +182,21 @@
     "types": [
       "ADC",
       "辅助"
+    ],
+    "builds": [
+      {
+        "title": "裂变飞行·寒冰狙击",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7654168611107684470",
+        "description": "利用咒语裂变和狙神飞行强化技能伤害，远程消耗敌人",
+        "items": [],
+        "hextechAugments": [
+          "咒语裂变2",
+          "狙神飞行"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -185,15 +264,39 @@
     ]
   },
   {
-    "id": "brand",
     "name": "复仇焰魂",
     "nameEn": "Brand",
     "title": "布兰德",
-    "aliases": [],
+    "aliases": [
+      "火男"
+    ],
     "types": [
       "法师",
       "辅助"
-    ]
+    ],
+    "builds": [
+      {
+        "title": "灼烧印钞·自然逆袭流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651474364289879359",
+        "description": "利用火男被动和技能的灼烧效果，通过自然逆袭海克斯快速积累金币，搭配冰杖和多种灼烧装备，实现经济碾压。",
+        "items": [
+          "瑞莱的冰晶节杖",
+          "兰德里的苦楚",
+          "恶魔之拥",
+          "残疫",
+          "虚空之杖"
+        ],
+        "hextechAugments": [
+          "魔法飞弹",
+          "自然逆袭",
+          "冰寒火"
+        ],
+        "dateAdded": "2026-06-30"
+      }
+    ],
+    "id": "brand"
   },
   {
     "id": "braum",
@@ -257,6 +360,18 @@
     "types": [
       "坦克",
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "盛宴秒杀流·ADC杀手",
+        "author": "@抖音博主",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653432559317044534",
+        "description": "打团时优先用盛宴真实伤害秒杀敌方ADC，叠加层数滚雪球。",
+        "items": [],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -293,7 +408,6 @@
     ]
   },
   {
-    "id": "draven",
     "name": "荣耀行刑官",
     "nameEn": "Draven",
     "title": "德莱文",
@@ -303,7 +417,9 @@
     ],
     "types": [
       "ADC"
-    ]
+    ],
+    "builds": [],
+    "id": "draven"
   },
   {
     "id": "dr-mundo",
@@ -363,6 +479,32 @@
     "types": [
       "ADC",
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "百爆EZ·法力弹幕",
+        "author": "@徐小涵哟",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653080397110086955",
+        "description": "以魔宗、夺萃、大天使为核心，高技能极速搭配暴击，普攻与技能混合输出。",
+        "items": [
+          "魔宗",
+          "夺萃之镰",
+          "大天使之杖",
+          "多米尼克领主的致意",
+          "疾射火炮"
+        ],
+        "hextechAugments": [
+          "珠光护手",
+          "巨人杀手",
+          "秘术冲拳",
+          "一流",
+          "质变棱彩",
+          "灵巧",
+          "大力"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -370,7 +512,9 @@
     "name": "远古恐惧",
     "nameEn": "Fiddlesticks",
     "title": "费德提克",
-    "aliases": [],
+    "aliases": [
+      "稻草人"
+    ],
     "types": [
       "法师",
       "辅助"
@@ -407,6 +551,18 @@
     "types": [
       "坦克",
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "技能强化避坑指南",
+        "author": "@徐小涵哟",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651588534188412223",
+        "description": "分析海盗3.0版本中多重射击、三重射击等海克斯的陷阱，提醒绕开这些选择以提升胜率。",
+        "items": [],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -417,6 +573,21 @@
     "aliases": [],
     "types": [
       "战士"
+    ],
+    "builds": [
+      {
+        "title": "多重裂变·海盗轰炸流",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653045123262350955",
+        "description": "利用多重射击和裂变咒语强化船长的技能与普攻，造成毁灭性AOE伤害。",
+        "items": [],
+        "hextechAugments": [
+          "多重射击",
+          "裂变咒语"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -430,6 +601,18 @@
     "types": [
       "战士",
       "坦克"
+    ],
+    "builds": [
+      {
+        "title": "大风车流·无限旋转",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651427081565310208",
+        "description": "利用英雄技能持续旋转造成范围伤害，操作华丽",
+        "items": [],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -452,6 +635,26 @@
     "types": [
       "战士",
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "无限连环眩晕·海克斯回响流",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653323155025582022",
+        "description": "利用海克斯异技能回响，酒桶E技能分身双倍眩晕，压缩冷却实现无限控制",
+        "items": [
+          "反甲"
+        ],
+        "hextechAugments": [
+          "异技能回响",
+          "游腻卡",
+          "无限循环往复",
+          "秘术风拳",
+          "虚幻武器"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -483,6 +686,38 @@
     "types": [
       "战士",
       "坦克"
+    ],
+    "builds": [
+      {
+        "title": "冰舞复活·无限Q",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652361886167502126",
+        "description": "利用冰死舞刀复活后属性大增，终极唤醒减Q CD至近乎无冷却，配合移速护盾无限冲锋搅乱战场。",
+        "items": [],
+        "hextechAugments": [
+          "冰死舞刀",
+          "轻拍背部",
+          "终极唤醒",
+          "电影立场"
+        ],
+        "dateAdded": "2026-06-30"
+      },
+      {
+        "title": "瞬移·无限暴走流",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652580086747077574",
+        "description": "核心海克斯快步触发Q技能冲刺，搭配终极唤醒实现全程瞬移穿梭",
+        "items": [],
+        "hextechAugments": [
+          "快步",
+          "终极唤醒",
+          "秘书冲拳",
+          "虚幻武器"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -560,6 +795,27 @@
     "types": [
       "战士",
       "坦克"
+    ],
+    "builds": [
+      {
+        "title": "AP皇子·地形专家",
+        "author": "@徐小涵哟",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7654525938444586275",
+        "description": "利用地形专家海克斯强化大招伤害，先出狂妄和公理圆弧，后转法强装备，实现一套秒杀后排。",
+        "items": [
+          "狂妄",
+          "公理圆弧",
+          "影焰",
+          "蜕生",
+          "灭世者的死亡之帽",
+          "中娅沙漏"
+        ],
+        "hextechAugments": [
+          "地形专家"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -675,7 +931,9 @@
     "name": "虚空行者",
     "nameEn": "Kassadin",
     "title": "卡萨丁",
-    "aliases": [],
+    "aliases": [
+      "卡萨丁"
+    ],
     "types": [
       "刺客",
       "法师"
@@ -693,6 +951,29 @@
     "types": [
       "刺客",
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "俯冲轰炸·双穿收割流",
+        "author": "@抖音博主",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651566586100856694",
+        "description": "依靠俯冲轰炸符文和卡特频繁位移触发额外伤害，对脆皮打出快速百分比爆发，中后期双穿透成型后全场收割。",
+        "items": [
+          "纳什之牙",
+          "峡谷制造者",
+          "虚空之杖",
+          "法师之靴",
+          "莫雷洛秘典",
+          "中娅沙漏"
+        ],
+        "hextechAugments": [
+          "俯冲轰炸",
+          "长生草丛",
+          "大力火狐"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -735,6 +1016,20 @@
     "aliases": [],
     "types": [
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "心之钢无限叠血流",
+        "author": "@抖音博主",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653351831560523034",
+        "description": "利用心之钢叠加生命值，配合卡兹克技能和被动，在乱斗中成为不死坦克收割残局。",
+        "items": [
+          "心之钢"
+        ],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -802,6 +1097,23 @@
     "types": [
       "战士",
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "零破炸弹·无限循环",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7654071698724529094",
+        "description": "通过护盾和治疗叠加零破炸弹层数，满层自动爆炸形成无限循环伤害。",
+        "items": [],
+        "hextechAugments": [
+          "零破炸弹",
+          "自然是治愈",
+          "参欲速缚强化",
+          "急救用具"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -816,15 +1128,40 @@
     ]
   },
   {
-    "id": "lillia",
     "name": "含羞蓓蕾",
     "nameEn": "Lillia",
     "title": "莉莉娅",
-    "aliases": [],
+    "aliases": [
+      "莉莉亚"
+    ],
     "types": [
       "战士",
       "法师"
-    ]
+    ],
+    "builds": [
+      {
+        "title": "不死永动·灼烧爆金币流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652967999288216886",
+        "description": "利用莉莉亚被动持续灼烧与自然逆息爆金币，多重灼烧加速发育，高移速与减速无限拉扯对手",
+        "items": [
+          "面具",
+          "火炬",
+          "冰杖",
+          "帽子",
+          "影焰"
+        ],
+        "hextechAugments": [
+          "自然逆息",
+          "炼狱导管",
+          "树死果子盒",
+          "冰寒"
+        ],
+        "dateAdded": "2026-06-30"
+      }
+    ],
+    "id": "lillia"
   },
   {
     "id": "lissandra",
@@ -856,6 +1193,23 @@
     "types": [
       "ADC",
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "海克斯弹射·AP卢锡安",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653416695465423487",
+        "description": "利用海克斯强化符文超负荷与老练射手，W技能远程消耗",
+        "items": [
+          "海克斯科技枪刃"
+        ],
+        "hextechAugments": [
+          "超负荷",
+          "老练射手"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -888,7 +1242,9 @@
     "name": "熔岩巨兽",
     "nameEn": "Malphite",
     "title": "墨菲特",
-    "aliases": [],
+    "aliases": [
+      "石头人"
+    ],
     "types": [
       "坦克",
       "法师"
@@ -909,10 +1265,30 @@
     "name": "扭曲树精",
     "nameEn": "Maokai",
     "title": "茂凯",
-    "aliases": [],
+    "aliases": [
+      "大树"
+    ],
     "types": [
       "坦克",
       "辅助"
+    ],
+    "builds": [
+      {
+        "title": "无限回血·护盾炸弹流",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651462635192022902",
+        "description": "利用灵魂炸弹和回血护盾符文，搭配大树控制回血，实现无限续航和坦度",
+        "items": [],
+        "hextechAugments": [
+          "灵魂炸弹",
+          "飞升",
+          "蛋白质",
+          "勇气",
+          "威武"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -928,6 +1304,23 @@
     "types": [
       "战士",
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "念经减伤·永久冥想流",
+        "author": "@徐小涵哟",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652324462041238822",
+        "description": "剑圣携带念经符文，出饭盒和灰蓝，实现永久70%减伤。",
+        "items": [
+          "饭盒",
+          "灰蓝"
+        ],
+        "hextechAugments": [
+          "念经"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -961,6 +1354,45 @@
     "types": [
       "ADC",
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "万箭归踪·无限弹幕",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652738562730888463",
+        "description": "利用翼损和暴击飞弹等海克斯符文，实现大招弹幕无限覆盖，造成大量AOE伤害。",
+        "items": [],
+        "hextechAugments": [
+          "翼损",
+          "暴击飞弹",
+          "CD符位",
+          "大法师"
+        ],
+        "dateAdded": "2026-06-30"
+      },
+      {
+        "title": "无限弹幕·海克斯冷却流",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651110041688509711",
+        "description": "通过海克斯符文与蓝量装备将E技能冷却堆至260左右，实现无限弹幕折磨对手",
+        "items": [
+          "大天使之杖",
+          "卢登的伙伴",
+          "视界专注",
+          "灭世者的死亡之帽",
+          "虚空之杖",
+          "明朗之靴"
+        ],
+        "hextechAugments": [
+          "大法师",
+          "游历卡",
+          "无限循环往复",
+          "缩效引擎"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -975,15 +1407,41 @@
     ]
   },
   {
-    "id": "mordekaiser",
     "name": "铁铠冥魂",
     "nameEn": "Mordekaiser",
     "title": "莫德凯撒",
-    "aliases": [],
+    "aliases": [
+      "铁男"
+    ],
     "types": [
       "战士",
       "法师"
-    ]
+    ],
+    "builds": [
+      {
+        "title": "血魔高压·铁男",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652588310174371099",
+        "description": "利用生命值装备强化高压锅灼烧与全能吸血，实现超高续航与持续伤害。",
+        "items": [
+          "冰葬",
+          "饮业",
+          "放血者诅咒",
+          "吸血血子",
+          "蓝盾",
+          "深渊面具"
+        ],
+        "hextechAugments": [
+          "数食果汁盒",
+          "高压锅",
+          "哎呦我的硬币",
+          "无尽大鲨四方"
+        ],
+        "dateAdded": "2026-06-30"
+      }
+    ],
+    "id": "mordekaiser"
   },
   {
     "id": "morgana",
@@ -1029,6 +1487,21 @@
     "types": [
       "战士",
       "坦克"
+    ],
+    "builds": [
+      {
+        "title": "千层暴击·一Q秒杀",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7654242022353538314",
+        "description": "快速叠加Q技能层数，搭配暴击与穿甲装备，实现满血秒杀",
+        "items": [
+          "三相之力",
+          "多米尼克领主的致意"
+        ],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1040,6 +1513,18 @@
     "types": [
       "坦克",
       "辅助"
+    ],
+    "builds": [
+      {
+        "title": "深海冲击·控制肉盾流",
+        "author": "@抖音博主",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653136408487415094",
+        "description": "利用泰坦大招和连环控制技能在乱斗中打出持续压制",
+        "items": [],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1058,7 +1543,9 @@
     "name": "狂野女猎手",
     "nameEn": "Nidalee",
     "title": "奈德丽",
-    "aliases": [],
+    "aliases": [
+      "豹女"
+    ],
     "types": [
       "刺客",
       "法师"
@@ -1129,6 +1616,30 @@
     "aliases": [],
     "types": [
       "坦克"
+    ],
+    "builds": [
+      {
+        "title": "未知套路",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651197012893468486",
+        "description": "",
+        "items": [],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      },
+      {
+        "title": "来财拾金·海克斯柱子流",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652366985090567434",
+        "description": "利用奥恩短CD的Q技能配合小丑学院符文，频繁触发金币掉落，快速发育压制对手。",
+        "items": [],
+        "hextechAugments": [
+          "小丑学院"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1162,6 +1673,20 @@
     "types": [
       "辅助",
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "先攻刷钱·海克斯斩杀流",
+        "author": "@抖音博主",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7650685354697149742",
+        "description": "派克大招斩杀分享金币，配合先攻快速发育",
+        "items": [],
+        "hextechAugments": [
+          "先攻"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1172,6 +1697,29 @@
     "aliases": [],
     "types": [
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "无限连击·吸血减速流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7650863160508828962",
+        "description": "利用超负荷W刷新机制实现技能不间断连招，配合高吸血与减速装备，在团战中无限黏人收割。",
+        "items": [
+          "魔宗",
+          "时光之杖",
+          "狂妄",
+          "自然之力",
+          "赛瑞尔达的怨恨",
+          "饮魔刀"
+        ],
+        "hextechAugments": [
+          "超负荷",
+          "银色质变",
+          "数式果汁盒"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1290,6 +1838,18 @@
     "aliases": [],
     "types": [
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "涌动刷新·万箭归踪",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653817495123397897",
+        "description": "利用EW禁锢刷新E技能，Q触发涌动弹射打出AOE伤害",
+        "items": [],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1347,6 +1907,27 @@
     "types": [
       "战士",
       "坦克"
+    ],
+    "builds": [
+      {
+        "title": "万血一拳·全能吸血流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7654522340662856970",
+        "description": "利用心之钢叠加生命值，配合刚硬决心和魔武双修符文将血量转化为攻击力，搭配巨型九头蛇、贪欲九头蛇与青龙刀，实现蓄意轰拳超高真伤和全能吸血，一拳秒杀回满血。",
+        "items": [
+          "心之钢",
+          "巨型九头蛇",
+          "贪欲九头蛇",
+          "朔极之矛",
+          "斯特拉克的挑战护手"
+        ],
+        "hextechAugments": [
+          "刚硬决心",
+          "魔武双修"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1380,6 +1961,29 @@
           "全能吸血碎片"
         ],
         "dateAdded": "2026-06-29"
+      },
+      {
+        "title": "千攻亮剑·科学暴击流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7648444814110854443",
+        "description": "利用狂妄、科学狂人、魔法转物理等符文将攻击力堆至1200，Q技能一刀秒杀敌人。",
+        "items": [
+          "狂妄",
+          "收集者",
+          "电震涡流剑",
+          "无尽之刃",
+          "多米尼克领主的致意",
+          "斯塔缇克电刃"
+        ],
+        "hextechAugments": [
+          "裁决之镰",
+          "攻击碎片",
+          "科学狂人",
+          "魔法转物理",
+          "百亿眼"
+        ],
+        "dateAdded": "2026-06-30"
       }
     ]
   },
@@ -1424,6 +2028,35 @@
     "types": [
       "坦克",
       "战士"
+    ],
+    "builds": [
+      {
+        "title": "高压灼烧·冰杖粘人",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651999018838527267",
+        "description": "AP赛恩出璀璨回响和冰杖，利用灼烧和减速持续炖伤敌人",
+        "items": [
+          "璀璨回响",
+          "瑞莱的冰晶节杖"
+        ],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      },
+      {
+        "title": "送死流·海克斯爆破",
+        "author": "@抖音博主",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652203232588150377",
+        "description": "赛恩送死速推，利用被动拆塔，心之钢叠血，配合巨型九头蛇打伤害，开团扛塔一人包办。",
+        "items": [
+          "心之钢",
+          "巨型九头蛇",
+          "石像鬼石板甲"
+        ],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1521,6 +2154,24 @@
     "types": [
       "坦克",
       "辅助"
+    ],
+    "builds": [
+      {
+        "title": "虚幻暮刃·双Q吞狼",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7654093144438459657",
+        "description": "利用虚幻武器符文让Q技能双倍触发，配合暮刃收割，一Q一个头",
+        "items": [
+          "暮刃",
+          "收集者"
+        ],
+        "hextechAugments": [
+          "虚幻武器",
+          "精准弹幕"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1564,6 +2215,20 @@
     "types": [
       "ADC",
       "法师"
+    ],
+    "builds": [
+      {
+        "title": "蘑菇轰炸·海洋龙魂流",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652367419960200486",
+        "description": "依靠海洋龙魂无限回蓝，两秒一个蘑菇，满图种蘑菇折磨对手",
+        "items": [],
+        "hextechAugments": [
+          "海洋龙魂"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1599,6 +2264,42 @@
     "types": [
       "战士",
       "坦克"
+    ],
+    "builds": [
+      {
+        "title": "飞升仪式·暴击刺客流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651106239090330923",
+        "description": "飞升仪式提供回血和移速，搭配收集者斩杀与满暴击Q技能，化身刺客秒杀敌人",
+        "items": [
+          "收集者",
+          "狂妄",
+          "无尽之刃",
+          "多米尼克领主的致意",
+          "吸血鞋子",
+          "水银弯刀"
+        ],
+        "hextechAugments": [
+          "收集者",
+          "残忍",
+          "飞升仪式"
+        ],
+        "dateAdded": "2026-06-30"
+      },
+      {
+        "title": "地形灼烧·偷钱巨魔",
+        "author": "@乱斗螃蟹",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7652955673835585734",
+        "description": "地形专家让柱子持续灼烧，配合先攻大招偷钱，快速发育经济伤害拉满。",
+        "items": [],
+        "hextechAugments": [
+          "地形专家",
+          "先攻"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1632,6 +2333,29 @@
     "types": [
       "ADC",
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "无限弹幕·牙仙穿甲流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653320911348714790",
+        "description": "利用牙仙子和暴击飞弹叠加高额双穿和暴击飞弹，配合飓风、公理圆弧刷新大招实现无限弹幕秒杀",
+        "items": [
+          "猎魔人鲁心",
+          "飓风",
+          "公理圆弧",
+          "重伤轻语",
+          "科技枪"
+        ],
+        "hextechAugments": [
+          "牙仙子",
+          "暴击飞弹",
+          "魔法转物理",
+          "连颇击锤"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1676,6 +2400,39 @@
     "types": [
       "ADC",
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "踏浪连破·移速真伤流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7654191245908102426",
+        "description": "利用踏浪前行叠加超高移速，连破击髓加速触发W真实伤害，搭配飓风电刀弹射快速叠层，化身鬼魅风筝射手。",
+        "items": [
+          "吸血鞋子",
+          "卢安娜的飓风",
+          "斯塔缇克电刃",
+          "水银弯刀",
+          "兰顿之兆"
+        ],
+        "hextechAugments": [
+          "踏浪前行",
+          "连破击髓",
+          "台风",
+          "飞升"
+        ],
+        "dateAdded": "2026-06-30"
+      },
+      {
+        "title": "蛇皮走位流",
+        "author": "@抖音博主",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651864604817116451",
+        "description": "利用Q技能翻滚和走位躲避技能，极致操作秀翻全场",
+        "items": [],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1718,6 +2475,40 @@
     "types": [
       "战士",
       "刺客"
+    ],
+    "builds": [
+      {
+        "title": "一拳暴击·海克斯自爆流",
+        "author": "@皇子凡",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7648442431981079849",
+        "description": "利用小丑学院自爆和升级收集者高斩杀线，一拳秒杀脆皮。",
+        "items": [
+          "收集者",
+          "狂妄",
+          "荒野剑",
+          "无尽之刃",
+          "红心宇",
+          "幽梦之灵"
+        ],
+        "hextechAugments": [
+          "升级收集者",
+          "有始有终",
+          "小丑学院",
+          "残血使"
+        ],
+        "dateAdded": "2026-06-29"
+      },
+      {
+        "title": "高爆收割·雷霆冲拳流",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7653432042494938394",
+        "description": "利用蔚的Q技能二段位移和高爆发伤害完成收割",
+        "items": [],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {
@@ -1752,6 +2543,33 @@
     "types": [
       "法师",
       "战士"
+    ],
+    "builds": [
+      {
+        "title": "高压锅折磨·法术吸血",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7651999583878384948",
+        "description": "利用高频Q技能吸血和兰德里的苦楚持续灼烧，配合帽子爆发",
+        "items": [
+          "兰德里的苦楚",
+          "灭世者的死亡之帽"
+        ],
+        "hextechAugments": [],
+        "dateAdded": "2026-06-30"
+      },
+      {
+        "title": "无限血池·急速流",
+        "author": "@乱斗老王（原名极地老王）",
+        "source": "抖音",
+        "sourceUrl": "https://www.douyin.com/video/7650377170317053194",
+        "description": "通过选择纯粹素师符文堆叠技能急速，使W技能冷却时间缩短至2秒内，实现无限血池",
+        "items": [],
+        "hextechAugments": [
+          "纯粹素师"
+        ],
+        "dateAdded": "2026-06-30"
+      }
     ]
   },
   {

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import ChampionCard from "@/components/ChampionCard";
 import { getChampionsWithBuilds } from "@/lib/utils";
+import otherBuilds from "@/data/other-builds.json";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,6 +32,21 @@ export default function HomePage() {
           来自抖音博主的社区套路合集，搜索英雄查看推荐出装与海克斯符文
         </p>
       </div>
+
+      {/* 未分类套路提示 */}
+      {otherBuilds.length > 0 && (
+        <Link
+          href="/other-builds"
+          className="block mb-6 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 hover:bg-amber-100 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-medium">
+              📦 还有 {otherBuilds.length} 个未分类套路
+            </span>
+            <span className="text-sm text-amber-600">查看详情 →</span>
+          </div>
+        </Link>
+      )}
 
       {/* 搜索框 */}
       <div className="mb-6">
