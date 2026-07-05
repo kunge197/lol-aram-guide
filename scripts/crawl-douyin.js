@@ -191,32 +191,42 @@ async function discoverVideosViaPlaywright(blogger) {
   const scriptPath = path.join(__dirname, "douyin_user_videos.py");
   if (!fs.existsSync(scriptPath)) return [];
 
-  try {
-    const tmpFile = path.join(CACHE_DIR, `discover_${Date.now()}.json`);
-    execSync(
-      `uv run --script "${scriptPath}" "${blogger.url}" --days 25 > "${tmpFile}"`,
-      { timeout: 180000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
-    );
+  const MAX_RETRIES = 2;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const tmpFile = path.join(CACHE_DIR, `discover_${Date.now()}_${attempt}.json`);
+      execSync(
+        `uv run --script "${scriptPath}" "${blogger.url}" --days 25 > "${tmpFile}"`,
+        { timeout: 180000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
+      );
 
-    // 从临时文件读取，确保编码正确
-    const raw = fs.readFileSync(tmpFile, "utf-8");
-    // 找到 JSON 部分（从第一个 { 开始）
-    const jsonStart = raw.indexOf("{");
-    if (jsonStart === -1) return [];
-    const result = JSON.parse(raw.substring(jsonStart));
+      const raw = fs.readFileSync(tmpFile, "utf-8");
+      const jsonStart = raw.indexOf("{");
+      if (jsonStart === -1) {
+        if (attempt < MAX_RETRIES) { log(`  重试 ${attempt + 1}/${MAX_RETRIES}...`); continue; }
+        return [];
+      }
+      const result = JSON.parse(raw.substring(jsonStart));
 
-    try { fs.unlinkSync(tmpFile); } catch {}
+      try { fs.unlinkSync(tmpFile); } catch {}
 
-    if (result.error) return [];
-    return (result.videos || []).map((v) => ({
-      id: v.id,
-      desc: (v.desc || "").substring(0, 80),
-      create_time: v.create_time || 0,
-    }));
-  } catch (e) {
-    log(`  ⚠️ Playwright 发现失败: ${e.message}`);
-    return [];
+      if (result.error) return [];
+      return (result.videos || []).map((v) => ({
+        id: v.id,
+        desc: (v.desc || "").substring(0, 80),
+        create_time: v.create_time || 0,
+      }));
+    } catch (e) {
+      if (attempt < MAX_RETRIES) {
+        log(`  ⚠️ Playwright 失败 (${attempt + 1}/${MAX_RETRIES}): ${e.message}，重试...`);
+        await sleep(3000 * (attempt + 1));
+      } else {
+        log(`  ❌ Playwright 最终失败: ${e.message}`);
+        return [];
+      }
+    }
   }
+  return [];
 }
 
 /**
@@ -495,6 +505,7 @@ async function parseBuildFromTranscript(transcript, title = "") {
 /**
  * 常见英雄昵称/简称 → champions.json 中的 id
  * LLM 可能输出各种称呼，此表将 nickname 归一化为标准 ID
+ * ⚠️ 同步维护: 此映射与 scripts/update-data.js 的 ALIASES 需保持一致
  */
 const NICKNAME_MAP = {
   // 中文通用称呼
@@ -591,13 +602,22 @@ function resolveChampionId(name) {
 // ==================== 数据更新 ====================
 
 function saveBuild(buildInfo, sourceUrl, author) {
+  const title = buildInfo.buildTitle || "未知套路";
+  const items = buildInfo.items || [];
+
+  // 过滤无效套路：未知标题且无装备
+  if (title === "未知套路" && items.length === 0) {
+    log(`  ⏭️ 跳过无效套路（无标题、无装备）`);
+    return;
+  }
+
   const buildEntry = {
-    title: buildInfo.buildTitle || "未知套路",
+    title,
     author: author || "@抖音博主",
     source: "抖音",
     sourceUrl,
     description: buildInfo.description || "",
-    items: buildInfo.items || [],
+    items,
     hextechAugments: buildInfo.hextechAugments || [],
     dateAdded: new Date().toISOString().split("T")[0],
   };
@@ -715,6 +735,10 @@ async function processVideo(shareUrl, author = "@抖音博主") {
     saveBuild(build, shareUrl, author);
     markVideoProcessed(videoId);
     log(`  ✅ 完成`);
+
+    // 清理视频文件（保留转录缓存）
+    try { if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath); } catch {}
+    try { if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath); } catch {}
   } catch (e) {
     log(`  ❌ ${e.message}`);
     // 失败时不做 markVideoProcessed，下次重试
@@ -759,6 +783,27 @@ async function refreshCookies() {
 
 async function main() {
   const args = process.argv.slice(2);
+
+  // 启动时验证 NICKNAME_MAP 的 hero ID 是否有效
+  const champions = readJSON(CHAMPIONS_FILE) || [];
+  const validIds = new Set(champions.map((c) => c.id));
+  const brokenMappings = Object.entries(NICKNAME_MAP).filter(([, id]) => !validIds.has(id));
+  if (brokenMappings.length > 0) {
+    log(`⚠️ NICKNAME_MAP 中有 ${brokenMappings.length} 个无效的 hero ID:`);
+    for (const [name, id] of brokenMappings) {
+      log(`  ${name} → ${id} (champions.json 中不存在)`);
+    }
+  }
+  // 验证 builds 数据完整性
+  for (const champ of champions) {
+    if (champ.builds) {
+      for (const build of champ.builds) {
+        if (!build.sourceUrl) {
+          log(`⚠️ ${champ.name} 缺少 sourceUrl 的套路: ${build.title}`);
+        }
+      }
+    }
+  }
 
   // --refresh-cookies、--check、--dry-run 不需要 API Key
   if (args.includes("--check") || args.includes("--refresh-cookies") || args.includes("--dry-run")) {

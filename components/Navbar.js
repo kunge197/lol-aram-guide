@@ -1,4 +1,5 @@
 import Link from "next/link";
+import versionData from "@/data/version.json";
 
 export default function Navbar() {
   return (
@@ -15,7 +16,7 @@ export default function Navbar() {
             >
               + 其他套路
             </Link>
-            <span className="text-xs text-blue-300">v16.13.1</span>
+            <span className="text-xs text-blue-300">v{versionData.gameVersion}</span>
           </div>
         </div>
       </div>

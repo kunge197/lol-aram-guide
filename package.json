@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "update-data": "node scripts/update-data.js",
-    "crawl": "node scripts/crawl-douyin.js"
+    "crawl": "node scripts/crawl-douyin.js",
+    "crawl:clean": "rm -rf data/.crawl-cache/*.mp4 data/.crawl-cache/*.wav data/.crawl-cache/*.mp3"
   },
   "dependencies": {
     "next": "16.2.9",

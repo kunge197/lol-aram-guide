@@ -4,6 +4,5 @@
   { "id": "战士", "name": "战士", "icon": "⚔️", "description": "近战持续输出" },
   { "id": "坦克", "name": "坦克", "icon": "🛡️", "description": "前排吸收伤害" },
   { "id": "法师", "name": "法师", "icon": "🔮", "description": "法术爆发输出" },
-  { "id": "远程消耗", "name": "远程消耗", "icon": "🏹", "description": "远距离持续消耗" },
   { "id": "辅助", "name": "辅助", "icon": "💫", "description": "保护和增益队友" }
 ]

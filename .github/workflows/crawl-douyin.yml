@@ -12,6 +12,7 @@ on:
 
 env:
   PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
+  CRAWL_CONCURRENCY: 2
 
 jobs:
   crawl:
@@ -23,10 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: 安装 Node.js
-        uses: actions/setup-node@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: npm
 
       - name: 安装依赖
         run: npm ci
@@ -37,9 +38,16 @@ jobs:
       - name: 安装 uv
         uses: astral-sh/setup-uv@v5
 
+      - name: 缓存 Playwright 浏览器
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: /home/runner/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}
+
       - name: 安装 Playwright 及浏览器
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
-          # 先安装 playwright 到临时环境并下载 chromium
           uv run --with playwright==1.61.0 -- python -m playwright install --with-deps chromium 2>&1
 
       - name: 运行爬虫

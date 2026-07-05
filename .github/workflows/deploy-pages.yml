@@ -26,6 +26,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: npm
 
       - name: 安装依赖
         run: npm ci
@@ -33,12 +34,9 @@ jobs:
       - name: 构建静态站点
         run: npm run build
 
-      - name: 添加 .nojekyll
-        run: touch out/.nojekyll
-
       - name: 部署到 GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./out
-          enable_jekyll: true
+          enable_jekyll: false

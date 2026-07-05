@@ -29,6 +29,7 @@ const TAG_MAP = {
 };
 
 // 英雄别名 (手动维护，Data Dragon 不提供别名)
+// ⚠️ 同步维护: 此映射与 scripts/crawl-douyin.js 的 NICKNAME_MAP 需保持一致
 const ALIASES = {
   Jinx: ["金克斯"],
   Ezreal: ["EZ", "伊泽"],
@@ -191,7 +192,6 @@ async function main() {
       { id: "战士", name: "战士", description: "近战持续输出" },
       { id: "坦克", name: "坦克", description: "前排吸收伤害" },
       { id: "法师", name: "法师", description: "法术爆发输出" },
-      { id: "远程消耗", name: "远程消耗", description: "远距离持续消耗" },
       { id: "辅助", name: "辅助", description: "保护和增益队友" },
     ];
     fs.writeFileSync(typePath, JSON.stringify(typesData, null, 2), "utf-8");

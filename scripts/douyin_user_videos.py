@@ -26,7 +26,6 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
     api_responses = []
     seen_api_urls = set()
 
-    # 从环境变量读取代理配置 (如 HTTPS_PROXY=http://127.0.0.1:7890)
     proxy_args = []
     proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
     if proxy:
@@ -52,8 +51,7 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
 
         async def on_response(response):
             url = response.url
-            print(f"[DEBUG] Response: {url[:120]}", file=sys.stderr)
-            # 只捕获 aweme/post 接口（博主视频列表），避免其他接口数据干扰
+            # 捕获 aweme/post 接口（博主视频列表）
             if "/aweme/v1/web/aweme/post/" in url:
                 if url in seen_api_urls:
                     return
@@ -65,14 +63,11 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
                     print(f"[DEBUG] Captured aweme/post: {len(aweme_list)} videos, has_more={data.get('has_more')}", file=sys.stderr)
                 except Exception as e:
                     print(f"[DEBUG] aweme/post JSON error: {e}", file=sys.stderr)
-            elif "aweme" in url and "/web/" in url:
-                # 只打印其他 aweme 接口，不捕获（避免干扰）
-                print(f"[DEBUG] Other aweme API: {url[:100]}", file=sys.stderr)
 
         def on_request(request):
             url = request.url
             if "/aweme/v1/web/aweme/post/" in url:
-                print(f"[DEBUG] Request aweme/post: {url[:150]}", file=sys.stderr)
+                print(f"[DEBUG] Request aweme/post", file=sys.stderr)
 
         page.on("response", on_response)
         page.on("request", on_request)
@@ -83,43 +78,63 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
         except Exception as e:
             print(f"[DEBUG] goto exception: {e}", file=sys.stderr)
 
-        # 等待视频数据加载
-        print(f"[DEBUG] Waiting 5s for initial API responses...", file=sys.stderr)
-        await asyncio.sleep(5)
+        # 智能等待：等视频链接出现或 API 响应到来，最多 8s
+        print(f"[DEBUG] Waiting for video content to load...", file=sys.stderr)
+        try:
+            await page.wait_for_selector('a[href*="/video/"]', timeout=8000)
+            print(f"[DEBUG] Video links appeared", file=sys.stderr)
+        except Exception:
+            print(f"[DEBUG] Video links not found via selector, continuing...", file=sys.stderr)
 
-        # 滚动页面加载更多视频（逐小步滚动，等待 API 响应）
+        # 额外等待 API 响应
+        await asyncio.sleep(3)
+
+        # 逐小步滚动，每次检查 API 是否有新响应
+        video_count_before = 0
+        stale_scrolls = 0
+        MAX_STALE_SCROLLS = 3
+
         print(f"[DEBUG] Scrolling to load more videos...", file=sys.stderr)
-        for scroll_i in range(8):
-            prev_aweme_count = len(api_responses)
-            # 小步滚动，触发抖音的懒加载
+        for scroll_i in range(15):
+            prev_api_count = len(api_responses)
+            prev_dom_count = len(videos)
+
+            # 小步滚动触发懒加载
             await page.evaluate("window.scrollBy(0, 800)")
             await asyncio.sleep(1.5)
-            if len(api_responses) > prev_aweme_count:
-                print(f"[DEBUG] Scroll {scroll_i + 1}: aweme API called again", file=sys.stderr)
-                # 等数据加载完成
-                await asyncio.sleep(2)
+
+            # 检查是否有新 API 响应
+            if len(api_responses) > prev_api_count:
+                print(f"[DEBUG] Scroll {scroll_i + 1}: new API response", file=sys.stderr)
+                await asyncio.sleep(2)  # 等数据加载完成
+                stale_scrolls = 0
             else:
-                # 可能滚到底了，尝试更大步长
+                # 无新 API 响应，尝试更大步长
                 await page.evaluate("window.scrollBy(0, 1500)")
                 await asyncio.sleep(2)
-                if len(api_responses) > prev_aweme_count:
-                    print(f"[DEBUG] Scroll {scroll_i + 1}: aweme API called (big scroll)", file=sys.stderr)
-                    await asyncio.sleep(2)
+                if len(api_responses) > prev_api_count:
+                    print(f"[DEBUG] Scroll {scroll_i + 1}: new API (big scroll)", file=sys.stderr)
+                    stale_scrolls = 0
                 else:
-                    print(f"[DEBUG] Scroll {scroll_i + 1}: no more data", file=sys.stderr)
-                    # 再试一次确认到底
-                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    await asyncio.sleep(2)
-                    if len(api_responses) > prev_aweme_count:
-                        print(f"[DEBUG] Scroll {scroll_i + 1}: aweme API called (bottom scroll)", file=sys.stderr)
-                    else:
-                        print(f"[DEBUG] Scroll {scroll_i + 1}: reached bottom", file=sys.stderr)
+                    stale_scrolls += 1
+                    print(f"[DEBUG] Scroll {scroll_i + 1}: no more data ({stale_scrolls}/{MAX_STALE_SCROLLS})", file=sys.stderr)
+                    if stale_scrolls >= MAX_STALE_SCROLLS:
+                        # 到底了，再试一次滚到底部
+                        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                        await asyncio.sleep(2)
+                        if len(api_responses) > prev_api_count:
+                            print(f"[DEBUG] Bottom scroll: new data!", file=sys.stderr)
+                            stale_scrolls = 0
+                            continue
+                        print(f"[DEBUG] Reached bottom, stopping", file=sys.stderr)
                         break
 
-        # 截图看看页面实际内容
+        # 截图调试
         try:
-            await page.screenshot(path="C:\\Users\\坤哥\\AppData\\Local\\Temp\\douyin_debug.png", full_page=True)
-            print(f"[DEBUG] Screenshot saved", file=sys.stderr)
+            import tempfile
+            screenshot_path = os.path.join(tempfile.gettempdir(), "douyin_debug.png")
+            await page.screenshot(path=screenshot_path, full_page=True)
+            print(f"[DEBUG] Screenshot saved to {screenshot_path}", file=sys.stderr)
         except Exception as e:
             print(f"[DEBUG] Screenshot failed: {e}", file=sys.stderr)
 
@@ -141,7 +156,25 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
         except Exception as e:
             print(f"[DEBUG] DOM extraction error: {e}", file=sys.stderr)
 
-        # Also try getting page title / content info
+        # 也尝试从页面嵌入的 JSON 数据提取视频
+        try:
+            script_data = await page.evaluate("""
+                () => {
+                    const scripts = document.querySelectorAll('script');
+                    for (const s of scripts) {
+                        if (s.textContent.includes('aweme_list') || s.textContent.includes('video')) {
+                            return s.textContent.substring(0, 5000);
+                        }
+                    }
+                    return null;
+                }
+            """)
+            if script_data:
+                print(f"[DEBUG] Found script data with video references", file=sys.stderr)
+        except:
+            pass
+
+        # 页面信息
         try:
             title = await page.title()
             print(f"[DEBUG] Page title: {title}", file=sys.stderr)
@@ -163,7 +196,7 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
                 "author": (item.get("author", {}).get("nickname", "")),
             })
 
-    # 合并 DOM 视频 ID（无 desc/create_time 的排在后面）
+    # 合并 DOM 视频 ID
     api_ids = {v["id"] for v in videos if v["id"]}
     for vid in sorted(dom_ids):
         if vid not in api_ids:
@@ -204,7 +237,6 @@ def main():
         videos = [v for v in videos if v.get("create_time") == 0 or (v.get("create_time") or 0) >= cutoff]
 
     result = {"url": user_url, "total": len(videos), "videos": videos}
-    # ensure_ascii=True 使中文转义为 \uXXXX，避免 Windows 管道编码问题
     print(json.dumps(result, ensure_ascii=True, indent=2))
 
 

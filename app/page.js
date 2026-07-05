@@ -4,11 +4,16 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import ChampionCard from "@/components/ChampionCard";
 import { getChampionsWithBuilds } from "@/lib/utils";
+import championsData from "@/data/champions.json";
 import otherBuilds from "@/data/other-builds.json";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const champions = useMemo(() => getChampionsWithBuilds(), []);
+  const totalBuilds = useMemo(
+    () => champions.reduce((sum, c) => sum + (c.builds?.length || 0), 0),
+    [champions]
+  );
 
   const filteredChampions = useMemo(() => {
     if (!searchQuery.trim()) return champions;
@@ -88,7 +93,7 @@ export default function HomePage() {
       <div className="mb-4 text-sm text-gray-400">
         {searchQuery
           ? `搜索 "${searchQuery}" 共找到 ${filteredChampions.length} 个英雄`
-          : `共 ${champions.length} 个英雄有社区套路`}
+          : `共 ${champions.length} 个英雄 · ${totalBuilds} 个套路`}
       </div>
 
       {/* 英雄卡片 */}

@@ -71,7 +71,7 @@ scripts/
 - 已处理的视频 ID 记录到 `.crawl-state.json`
 
 ### 关键参数
-- 并发: 3 (CRAWL_CONCURRENCY)
+- 并发: 3 (CRAWL_CONCURRENCY，CI 环境自动降为 2)
 - LLM 模型: Qwen/QwQ-32B (LLM_MODEL)
 - 时间过滤: `--days 25`（覆盖 6 月 12 日起）
 - 重复检测: 按 `sourceUrl` 和 `title` 去重
@@ -82,4 +82,6 @@ scripts/
 - 抖音 API 需要 X-Bogus 签名，纯 HTTP 直连不可行
 - GITHUB_TOKEN push 不触发其他 workflow，需 `gh workflow run` 显式触发
 - 截图路径 `C:\Users\坤哥\AppData\Local\Temp\douyin_debug.png` 只在本地有效
-- Navbar 版本号目前硬编码，需手动更新
+- GitHub Actions 中 CRAWL_CONCURRENCY=2（预制 runner 资源有限），本地默认 3
+- 别名映射 (`scripts/crawl-douyin.js` NICKNAME_MAP 与 `scripts/update-data.js` ALIASES) 需同步维护
+- 爬虫成功处理视频后自动删除 MP4/WAV 文件以节省空间，transcript 缓存保留
