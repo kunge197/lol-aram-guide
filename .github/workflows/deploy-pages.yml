@@ -15,8 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://kunge197.github.io/lol-aram-guide/
     steps:
       - uses: actions/checkout@v5
 
@@ -33,18 +36,7 @@ jobs:
       - name: 添加 .nojekyll 文件
         run: touch out/.nojekyll
 
-      - name: 上传构建产物
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: ./out
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: 部署到 GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+        run: gh pages deploy --dist out
+        env:
+          GH_TOKEN: ${{ github.token }}
