@@ -200,7 +200,8 @@ def main():
     videos = asyncio.run(extract_user_videos(user_url))
 
     if cutoff:
-        videos = [v for v in videos if (v.get("create_time") or 0) >= cutoff]
+        # 保留 DOM 提取的视频（create_time=0），只过滤 API 返回的有时间戳的视频
+        videos = [v for v in videos if v.get("create_time") == 0 or (v.get("create_time") or 0) >= cutoff]
 
     result = {"url": user_url, "total": len(videos), "videos": videos}
     # ensure_ascii=True 使中文转义为 \uXXXX，避免 Windows 管道编码问题

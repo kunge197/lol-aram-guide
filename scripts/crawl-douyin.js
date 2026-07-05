@@ -194,7 +194,7 @@ async function discoverVideosViaPlaywright(blogger) {
   try {
     const tmpFile = path.join(CACHE_DIR, `discover_${Date.now()}.json`);
     execSync(
-      `uv run --script "${scriptPath}" "${blogger.url}" > "${tmpFile}"`,
+      `uv run --script "${scriptPath}" "${blogger.url}" --days 25 > "${tmpFile}"`,
       { timeout: 180000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
     );
 
