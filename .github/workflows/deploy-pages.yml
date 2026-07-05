@@ -36,6 +36,9 @@ jobs:
       - name: 添加 .nojekyll 文件
         run: touch out/.nojekyll
 
+      - name: 安装 gh-pages 扩展
+        run: gh extension install github/gh-pages
+
       - name: 部署到 GitHub Pages
         run: gh pages deploy --dist out
         env:
