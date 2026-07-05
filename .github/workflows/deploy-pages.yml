@@ -30,6 +30,9 @@ jobs:
       - name: 构建静态站点
         run: npm run build
 
+      - name: 添加 .nojekyll 文件
+        run: touch out/.nojekyll
+
       - name: 上传构建产物
         uses: actions/upload-pages-artifact@v5
         with:
