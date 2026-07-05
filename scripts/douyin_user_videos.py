@@ -20,11 +20,11 @@ import time
 from playwright.async_api import async_playwright
 
 
-async def extract_user_videos(user_url: str, max_videos: int = 50) -> list[dict]:
+async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict]:
     """访问抖音博主主页，提取视频列表"""
     videos = []
     api_responses = []
-    api_event = asyncio.Event()
+    seen_api_urls = set()
 
     # 从环境变量读取代理配置 (如 HTTPS_PROXY=http://127.0.0.1:7890)
     proxy_args = []
@@ -53,38 +53,68 @@ async def extract_user_videos(user_url: str, max_videos: int = 50) -> list[dict]
         async def on_response(response):
             url = response.url
             print(f"[DEBUG] Response: {url[:120]}", file=sys.stderr)
-            if "aweme/post" in url or "aweme/v1" in url or "aweme" in url:
+            # 只捕获 aweme/post 接口（博主视频列表），避免其他接口数据干扰
+            if "/aweme/v1/web/aweme/post/" in url:
+                if url in seen_api_urls:
+                    return
+                seen_api_urls.add(url)
                 try:
                     data = await response.json()
                     api_responses.append(data)
-                    api_event.set()
-                    print(f"[DEBUG] Captured API response: {url[:80]}", file=sys.stderr)
+                    aweme_list = data.get("aweme_list") or []
+                    print(f"[DEBUG] Captured aweme/post: {len(aweme_list)} videos, has_more={data.get('has_more')}", file=sys.stderr)
                 except Exception as e:
-                    # Try text fallback
-                    try:
-                        txt = await response.text()
-                        if len(txt) < 500:
-                            print(f"[DEBUG] Non-JSON response: {txt[:200]}", file=sys.stderr)
-                    except:
-                        pass
+                    print(f"[DEBUG] aweme/post JSON error: {e}", file=sys.stderr)
+            elif "aweme" in url and "/web/" in url:
+                # 只打印其他 aweme 接口，不捕获（避免干扰）
+                print(f"[DEBUG] Other aweme API: {url[:100]}", file=sys.stderr)
 
-        async def on_request(request):
+        def on_request(request):
             url = request.url
-            if "aweme" in url.lower():
-                print(f"[DEBUG] Request: {url[:150]}", file=sys.stderr)
+            if "/aweme/v1/web/aweme/post/" in url:
+                print(f"[DEBUG] Request aweme/post: {url[:150]}", file=sys.stderr)
 
         page.on("response", on_response)
         page.on("request", on_request)
 
-        # 导航到博主主页（超时不影响，数据已在回调中捕获）
+        # 导航到博主主页
         try:
             await page.goto(user_url, wait_until="domcontentloaded", timeout=30000)
         except Exception as e:
             print(f"[DEBUG] goto exception: {e}", file=sys.stderr)
 
         # 等待视频数据加载
-        print(f"[DEBUG] Waiting 8s for API responses...", file=sys.stderr)
-        await asyncio.sleep(8)
+        print(f"[DEBUG] Waiting 5s for initial API responses...", file=sys.stderr)
+        await asyncio.sleep(5)
+
+        # 滚动页面加载更多视频（逐小步滚动，等待 API 响应）
+        print(f"[DEBUG] Scrolling to load more videos...", file=sys.stderr)
+        for scroll_i in range(8):
+            prev_aweme_count = len(api_responses)
+            # 小步滚动，触发抖音的懒加载
+            await page.evaluate("window.scrollBy(0, 800)")
+            await asyncio.sleep(1.5)
+            if len(api_responses) > prev_aweme_count:
+                print(f"[DEBUG] Scroll {scroll_i + 1}: aweme API called again", file=sys.stderr)
+                # 等数据加载完成
+                await asyncio.sleep(2)
+            else:
+                # 可能滚到底了，尝试更大步长
+                await page.evaluate("window.scrollBy(0, 1500)")
+                await asyncio.sleep(2)
+                if len(api_responses) > prev_aweme_count:
+                    print(f"[DEBUG] Scroll {scroll_i + 1}: aweme API called (big scroll)", file=sys.stderr)
+                    await asyncio.sleep(2)
+                else:
+                    print(f"[DEBUG] Scroll {scroll_i + 1}: no more data", file=sys.stderr)
+                    # 再试一次确认到底
+                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                    await asyncio.sleep(2)
+                    if len(api_responses) > prev_aweme_count:
+                        print(f"[DEBUG] Scroll {scroll_i + 1}: aweme API called (bottom scroll)", file=sys.stderr)
+                    else:
+                        print(f"[DEBUG] Scroll {scroll_i + 1}: reached bottom", file=sys.stderr)
+                        break
 
         # 截图看看页面实际内容
         try:

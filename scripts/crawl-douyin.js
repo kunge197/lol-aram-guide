@@ -44,8 +44,6 @@ const OTHER_BUILDS_FILE = path.join(DATA_DIR, "other-builds.json");
 const COOKIE_FILE = path.join(CACHE_DIR, "douyin_cookies.txt");
 const CONCURRENCY = parseInt(process.env.CRAWL_CONCURRENCY || "3", 10);
 
-const FIRST_CRAWL_SINCE = new Date("2026-06-12T00:00:00+08:00").getTime() / 1000;
-
 const BLOGGERS = [
   { name: "皇子凡", url: "https://www.douyin.com/user/MS4wLjABAAAAahe2W9pdv6se5wgletSviwIzl6fZmhMlULAQsj14JRQ" },
   { name: "徐小涵哟", url: "https://www.douyin.com/user/MS4wLjABAAAA3N8rhvUVREVQ9FcT-N3JFYcKZpsGU80xWcH31WvAkpw" },
@@ -195,20 +193,9 @@ async function discoverVideosViaPlaywright(blogger) {
 
   try {
     const tmpFile = path.join(CACHE_DIR, `discover_${Date.now()}.json`);
-    const state = getState();
-    let sinceTime;
-    if (!state.firstCrawlDone) {
-      sinceTime = FIRST_CRAWL_SINCE;
-    } else {
-      sinceTime = state.lastCrawlTime
-        ? new Date(state.lastCrawlTime).getTime() / 1000 - 86400
-        : FIRST_CRAWL_SINCE;
-    }
-
-    const daysSince = Math.max(1, Math.ceil((Date.now() / 1000 - sinceTime) / 86400));
     execSync(
-      `uv run --script "${scriptPath}" "${blogger.url}" --days ${daysSince} > "${tmpFile}" 2>&1`,
-      { timeout: 120000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
+      `uv run --script "${scriptPath}" "${blogger.url}" > "${tmpFile}"`,
+      { timeout: 180000, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
     );
 
     // 从临时文件读取，确保编码正确

@@ -16,6 +16,9 @@ env:
 jobs:
   crawl:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
 
     steps:
       - uses: actions/checkout@v5
@@ -58,7 +61,7 @@ jobs:
       - name: 检查数据变更
         id: check
         run: |
-          if [ -n "$(git status --porcelain 'data/champions.json' 'data/other-builds.json')" ]; then
+          if [ -n "$(git status --porcelain 'data/champions.json' 'data/other-builds.json' 'data/.crawl-state.json')" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
@@ -70,3 +73,9 @@ jobs:
           git add data/champions.json data/other-builds.json data/.crawl-state.json
           git commit -m "chore(data): 自动爬取套路数据 $(date +%Y-%m-%d)"
           git push
+
+      - name: 触发部署
+        if: steps.check.outputs.changed == 'true'
+        run: gh workflow run deploy-pages.yml
+        env:
+          GH_TOKEN: ${{ github.token }}
