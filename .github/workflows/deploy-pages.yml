@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -17,9 +15,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: https://kunge197.github.io/lol-aram-guide/
     steps:
       - uses: actions/checkout@v5
 
@@ -36,10 +31,8 @@ jobs:
       - name: 添加 .nojekyll 文件
         run: touch out/.nojekyll
 
-      - name: 安装 gh-pages 扩展
-        run: gh extension install github/gh-pages
-
       - name: 部署到 GitHub Pages
-        run: gh pages deploy --dist out
-        env:
-          GH_TOKEN: ${{ github.token }}
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
