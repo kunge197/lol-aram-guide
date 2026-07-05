@@ -264,6 +264,7 @@
     ]
   },
   {
+    "id": "brand",
     "name": "复仇焰魂",
     "nameEn": "Brand",
     "title": "布兰德",
@@ -295,8 +296,7 @@
         ],
         "dateAdded": "2026-06-30"
       }
-    ],
-    "id": "brand"
+    ]
   },
   {
     "id": "braum",
@@ -408,6 +408,7 @@
     ]
   },
   {
+    "id": "draven",
     "name": "荣耀行刑官",
     "nameEn": "Draven",
     "title": "德莱文",
@@ -417,9 +418,7 @@
     ],
     "types": [
       "ADC"
-    ],
-    "builds": [],
-    "id": "draven"
+    ]
   },
   {
     "id": "dr-mundo",
@@ -536,7 +535,9 @@
     "name": "潮汐海灵",
     "nameEn": "Fizz",
     "title": "菲兹",
-    "aliases": [],
+    "aliases": [
+      "鱼人"
+    ],
     "types": [
       "刺客",
       "战士"
@@ -682,7 +683,9 @@
     "name": "战争之影",
     "nameEn": "Hecarim",
     "title": "赫卡里姆",
-    "aliases": [],
+    "aliases": [
+      "人马"
+    ],
     "types": [
       "战士",
       "坦克"
@@ -791,7 +794,10 @@
     "name": "德玛西亚皇子",
     "nameEn": "JarvanIV",
     "title": "嘉文四世",
-    "aliases": [],
+    "aliases": [
+      "嘉文",
+      "皇子"
+    ],
     "types": [
       "战士",
       "坦克"
@@ -1128,6 +1134,7 @@
     ]
   },
   {
+    "id": "lillia",
     "name": "含羞蓓蕾",
     "nameEn": "Lillia",
     "title": "莉莉娅",
@@ -1160,8 +1167,7 @@
         ],
         "dateAdded": "2026-06-30"
       }
-    ],
-    "id": "lillia"
+    ]
   },
   {
     "id": "lissandra",
@@ -1189,7 +1195,9 @@
     "name": "圣枪游侠",
     "nameEn": "Lucian",
     "title": "卢锡安",
-    "aliases": [],
+    "aliases": [
+      "奥巴马"
+    ],
     "types": [
       "ADC",
       "刺客"
@@ -1407,6 +1415,7 @@
     ]
   },
   {
+    "id": "mordekaiser",
     "name": "铁铠冥魂",
     "nameEn": "Mordekaiser",
     "title": "莫德凯撒",
@@ -1440,8 +1449,7 @@
         ],
         "dateAdded": "2026-06-30"
       }
-    ],
-    "id": "mordekaiser"
+    ]
   },
   {
     "id": "morgana",
@@ -1567,7 +1575,9 @@
     "name": "永恒梦魇",
     "nameEn": "Nocturne",
     "title": "魔腾",
-    "aliases": [],
+    "aliases": [
+      "梦魇"
+    ],
     "types": [
       "战士",
       "刺客"
@@ -1813,7 +1823,9 @@
     "name": "放逐之刃",
     "nameEn": "Riven",
     "title": "锐雯",
-    "aliases": [],
+    "aliases": [
+      "瑞文"
+    ],
     "types": [
       "战士",
       "刺客"
@@ -1824,7 +1836,9 @@
     "name": "机械公敌",
     "nameEn": "Rumble",
     "title": "兰博",
-    "aliases": [],
+    "aliases": [
+      "兰博"
+    ],
     "types": [
       "战士",
       "法师"
@@ -2013,7 +2027,9 @@
     "name": "炼金术士",
     "nameEn": "Singed",
     "title": "辛吉德",
-    "aliases": [],
+    "aliases": [
+      "炼金"
+    ],
     "types": [
       "坦克",
       "法师"
@@ -2024,7 +2040,9 @@
     "name": "亡灵战神",
     "nameEn": "Sion",
     "title": "赛恩",
-    "aliases": [],
+    "aliases": [
+      "塞恩"
+    ],
     "types": [
       "坦克",
       "战士"
@@ -2118,7 +2136,9 @@
     "name": "诺克萨斯统领",
     "nameEn": "Swain",
     "title": "斯维因",
-    "aliases": [],
+    "aliases": [
+      "乌鸦"
+    ],
     "types": [
       "法师",
       "辅助"
@@ -2200,7 +2220,9 @@
     "name": "瓦洛兰之盾",
     "nameEn": "Taric",
     "title": "塔里克",
-    "aliases": [],
+    "aliases": [
+      "宝石"
+    ],
     "types": [
       "辅助",
       "坦克"
@@ -2211,7 +2233,9 @@
     "name": "迅捷斥候",
     "nameEn": "Teemo",
     "title": "提莫",
-    "aliases": [],
+    "aliases": [
+      "提莫"
+    ],
     "types": [
       "ADC",
       "法师"
@@ -2260,7 +2284,9 @@
     "name": "巨魔之王",
     "nameEn": "Trundle",
     "title": "特朗德尔",
-    "aliases": [],
+    "aliases": [
+      "巨魔"
+    ],
     "types": [
       "战士",
       "坦克"
@@ -2318,7 +2344,9 @@
     "name": "卡牌大师",
     "nameEn": "TwistedFate",
     "title": "崔斯特",
-    "aliases": [],
+    "aliases": [
+      "卡牌"
+    ],
     "types": [
       "法师",
       "ADC"
@@ -2396,7 +2424,9 @@
     "name": "暗夜猎手",
     "nameEn": "Vayne",
     "title": "薇恩",
-    "aliases": [],
+    "aliases": [
+      "VN"
+    ],
     "types": [
       "ADC",
       "刺客"
@@ -2450,7 +2480,9 @@
     "name": "虚空之眼",
     "nameEn": "Velkoz",
     "title": "维克兹",
-    "aliases": [],
+    "aliases": [
+      "大眼"
+    ],
     "types": [
       "法师",
       "辅助"
@@ -2539,7 +2571,9 @@
     "name": "猩红收割者",
     "nameEn": "Vladimir",
     "title": "弗拉基米尔",
-    "aliases": [],
+    "aliases": [
+      "吸血鬼"
+    ],
     "types": [
       "法师",
       "战士"
@@ -2745,7 +2779,9 @@
     "name": "时光守护者",
     "nameEn": "Zilean",
     "title": "基兰",
-    "aliases": [],
+    "aliases": [
+      "时光"
+    ],
     "types": [
       "辅助",
       "法师"
