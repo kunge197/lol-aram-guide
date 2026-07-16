@@ -637,9 +637,10 @@ async function processVideo(shareUrl, author = "@抖音博主") {
 
     // 0. 先用 yt-dlp 快速获取标题，过滤非 LOL 视频
     let videoTitle = "";
+    const titleCookieArg = fs.existsSync(COOKIE_FILE) ? `--cookies "${COOKIE_FILE}"` : "";
     try {
       videoTitle = execSync(
-        `uv run --with yt-dlp -- python -m yt_dlp --no-warnings --print title "${shareUrl}"`,
+        `uv run --with yt-dlp -- python -m yt_dlp --no-warnings ${titleCookieArg} --print title "${shareUrl}"`,
         { timeout: 15000, encoding: "utf-8", stdio: "pipe" }
       ).trim();
     } catch { /* 标题获取失败，继续处理 */ }

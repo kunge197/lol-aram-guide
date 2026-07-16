@@ -62,6 +62,13 @@ async def get_cookies(output_path=None):
             locale="zh-CN",
         )
         page = await context.new_page()
+        # 先访问首页获取基础 cookie
+        try:
+            await page.goto("https://www.douyin.com/", timeout=15000)
+            await asyncio.sleep(2)
+        except Exception:
+            pass
+        # 再访问视频页获取更多 cookie
         try:
             await page.goto("https://www.douyin.com/video/7648442431981079849", timeout=15000)
         except Exception:
