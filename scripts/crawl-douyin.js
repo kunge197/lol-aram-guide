@@ -482,14 +482,21 @@ async function parseBuildFromTranscript(transcript, title = "") {
       const completion = await client.chat.completions.create({
         model: LLM_CONFIG.model,
         messages: [
-          { role: "system", content: "你是一个精确的结构化数据提取器，只返回 JSON。" },
+          {
+            role: "system",
+            content: "你必须只输出符合要求 JSON 对象，不要输出任何其他文字、思考过程、或 markdown 代码块标记。直接输出原始 JSON。",
+          },
           { role: "user", content: userContent },
         ],
         temperature: 0.1,
-        response_format: { type: "json_object" },
       });
 
-      const content = completion.choices[0]?.message?.content || "{}";
+      let content = completion.choices[0]?.message?.content || "{}";
+
+      // 剥离推理模型的 思考过程
+      content = content.replace(/^[\s\S]*?```(?:json)?\s*/m, "").replace(/\s*```[\s\S]*$/m, "");
+      content = content.replace(/^[\s\S]*?(\{)/m, "$1").replace(/(\})[\s\S]*$/m, "$1");
+
       try { return JSON.parse(content); }
       catch {
         const jm = content.match(/```(?:json)?\s*([\s\S]*?)```/);
