@@ -89,11 +89,13 @@ jobs:
             done
           elif [ "${{ inputs.debug }}" == "true" ]; then
             echo "=== 调试模式 ==="
-            echo "1. 检查当前状态:"
+            echo "检查当前状态:"
             npm run crawl -- --check
             echo ""
-            echo "2. Dry-run 发现视频但不处理:"
-            npm run crawl -- --dry-run
+            echo "处理视频 - 调试日志已开启:"
+            echo "（DOUYIN_DEBUG=1，会打印文案预览和 LLM 原始返回）"
+            echo "注意: debug 模式不下推代码变更"
+            npm run crawl
           else
             npm run crawl
           fi
