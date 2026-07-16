@@ -239,9 +239,18 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
 
     # 合并 DOM 视频 ID
     api_ids = {v["id"] for v in videos if v["id"]}
+    dom_only_ids = []
     for vid in sorted(dom_ids):
         if vid not in api_ids:
-            videos.append({"id": vid, "desc": "", "create_time": 0, "author": ""})
+            dom_only_ids.append(vid)
+
+    # API 返回空时（反爬），DOM 视频没有时间戳无法过滤，只取最新的几个
+    if not api_ids and dom_only_ids:
+        dom_only_ids = dom_only_ids[-10:]  # 取最新（排序后最后）
+        print(f"[DEBUG] API 无响应，DOM 兜底限制为 {len(dom_only_ids)} 个最新视频", file=sys.stderr)
+
+    for vid in dom_only_ids:
+        videos.append({"id": vid, "desc": "", "create_time": 0, "author": ""})
 
     # 去重 + 按时间排序
     seen = set()
