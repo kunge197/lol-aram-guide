@@ -35,6 +35,7 @@ yarn-error.log*
 
 # crawl cache
 data/.crawl-cache/
+!data/.crawl-cache/douyin_cookies.txt
 
 # vercel
 .vercel
