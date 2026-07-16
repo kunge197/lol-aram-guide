@@ -612,6 +612,19 @@ function addToOtherBuilds(entry, possible) {
 
 // ==================== 视频处理管线 ====================
 
+/** 快速检查视频标题是否与英雄联盟/大乱斗相关 */
+function isLOLRelatedTitle(title) {
+  if (!title) return null; // 无法判断，交给后续处理
+  const keywords = [
+    "lol", "英雄联盟", "大乱斗", "aram", "海克斯", "峡谷",
+    "联盟", "套路", "出装", "符文", "英雄", "上分",
+    "adc", "中单", "打野", "上单", "辅助", "坦克", "法师",
+    "刺客", "战士", "射手", "盖伦", "亚索", "金克丝",
+  ];
+  const lower = title.toLowerCase();
+  return keywords.some((k) => lower.includes(k.toLowerCase()));
+}
+
 async function processVideo(shareUrl, author = "@抖音博主") {
   const videoId = shareUrl.split("video/")[1]?.split("?")[0];
   if (!videoId) { log(`  ❌ 无效链接: ${shareUrl}`); return; }
@@ -621,6 +634,25 @@ async function processVideo(shareUrl, author = "@抖音博主") {
 
   try {
     log(`处理: ${shareUrl}`);
+
+    // 0. 先用 yt-dlp 快速获取标题，过滤非 LOL 视频
+    let videoTitle = "";
+    try {
+      videoTitle = execSync(
+        `uv run --with yt-dlp -- python -m yt_dlp --no-warnings --print title "${shareUrl}"`,
+        { timeout: 15000, encoding: "utf-8", stdio: "pipe" }
+      ).trim();
+    } catch { /* 标题获取失败，继续处理 */ }
+
+    if (videoTitle) {
+      const relevant = isLOLRelatedTitle(videoTitle);
+      if (relevant === false) {
+        log(`  ⏭️ 跳过无关视频: ${videoTitle.slice(0, 60)}`);
+        markVideoProcessed(videoId);
+        return;
+      }
+      log(`  视频标题: ${videoTitle.slice(0, 80)}`);
+    }
 
     // 1. 视频下载
     const videoPath = await downloadVideo(shareUrl, videoId);
@@ -660,19 +692,13 @@ async function processVideo(shareUrl, author = "@抖音博主") {
     }
     log(`  文案 ${transcript.length} 字`);
 
-    // 4. 获取视频标题 (从缓存 meta 或 yt-dlp 输出)
-    let title = "";
-    const metaFile = path.join(CACHE_DIR, `${videoId}.meta.json`);
-    if (fs.existsSync(metaFile)) {
-      title = JSON.parse(fs.readFileSync(metaFile, "utf-8")).title || "";
-    } else {
-      // 尝试从 yt-dlp 获取标题 (--print title)
-      try {
-        title = execSync(
-          `uv run --with yt-dlp -- python -m yt_dlp --no-warnings --print title "${shareUrl}"`,
-          { timeout: 30000, encoding: "utf-8", stdio: "pipe" }
-        ).trim();
-      } catch { /* ignore */ }
+    // 4. 获取视频标题 (复用第 0 步的结果)
+    let title = videoTitle || "";
+    if (!title) {
+      const metaFile = path.join(CACHE_DIR, `${videoId}.meta.json`);
+      if (fs.existsSync(metaFile)) {
+        title = JSON.parse(fs.readFileSync(metaFile, "utf-8")).title || "";
+      }
     }
 
     // 5. AI 解析
