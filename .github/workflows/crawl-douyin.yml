@@ -57,21 +57,7 @@ jobs:
           uv run --with playwright==${{ env.PLAYWRIGHT_VERSION }} -- python -m playwright install --with-deps chromium 2>&1
 
       - name: 检查 Playwright 浏览器可用性
-        run: |
-          uv run --with playwright==${{ env.PLAYWRIGHT_VERSION }} -- python -c "
-import sys
-from playwright.sync_api import sync_playwright
-try:
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto('https://example.com')
-        print('✅ Playwright 可用')
-        browser.close()
-except Exception as e:
-    print(f'❌ Playwright 不可用: {e}')
-    sys.exit(1)
-" 2>&1
+        run: uv run --with playwright==${{ env.PLAYWRIGHT_VERSION }} -- python -c "from playwright.sync_api import sync_playwright; p=sync_playwright(); p.start(); b=p.chromium.launch(headless=True); bp=b.new_page(); bp.goto('https://example.com'); print('OK'); b.close(); p.stop()" 2>&1
 
       - name: 检查 Cookie 是否有效
         run: |
