@@ -9,10 +9,17 @@ on:
         description: "要处理的视频链接（多个用逗号分隔）"
         required: false
         type: string
+      debug:
+        description: "调试模式：详细日志输出，不下推更改"
+        required: false
+        type: boolean
+        default: false
 
 env:
   PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
   CRAWL_CONCURRENCY: 2
+  # 固定 Playwright 版本，必须与 scripts/ 下 Python 脚本的依赖约束一致
+  PLAYWRIGHT_VERSION: "1.61.0"
 
 jobs:
   crawl:
@@ -29,7 +36,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: 安装依赖
+      - name: 安装 Node 依赖
         run: npm ci
 
       - name: 安装 ffmpeg
@@ -43,12 +50,44 @@ jobs:
         id: playwright-cache
         with:
           path: /home/runner/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}
+          key: playwright-chromium-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
 
-      - name: 安装 Playwright 及浏览器
+      - name: 安装 Playwright ${{ env.PLAYWRIGHT_VERSION }} 及浏览器
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
-          uv run --with playwright==1.61.0 -- python -m playwright install --with-deps chromium 2>&1
+          uv run --with playwright==${{ env.PLAYWRIGHT_VERSION }} -- python -m playwright install --with-deps chromium 2>&1
+
+      - name: 检查 Playwright 浏览器可用性
+        run: |
+          uv run --with playwright==${{ env.PLAYWRIGHT_VERSION }} -- python -c "
+import sys
+from playwright.sync_api import sync_playwright
+try:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto('https://example.com')
+        print('✅ Playwright 可用')
+        browser.close()
+except Exception as e:
+    print(f'❌ Playwright 不可用: {e}')
+    sys.exit(1)
+" 2>&1
+
+      - name: 检查 Cookie 是否有效
+        run: |
+          COOKIE_FILE="data/.crawl-cache/douyin_cookies.txt"
+          if [ -f "$COOKIE_FILE" ]; then
+            SIZE=$(stat -c%s "$COOKIE_FILE")
+            echo "Cookie 文件大小: $SIZE bytes"
+            if [ "$SIZE" -lt 50 ]; then
+              echo "⚠️ Cookie 文件过小，可能需要刷新"
+            else
+              echo "✅ Cookie 文件存在"
+            fi
+          else
+            echo "⚠️ Cookie 文件不存在，爬虫将自动生成"
+          fi
 
       - name: 运行爬虫
         env:
@@ -56,34 +95,65 @@ jobs:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          DOUYIN_DEBUG: ${{ inputs.debug == 'true' && '1' || '' }}
         run: |
           if [ -n "${{ inputs.urls }}" ]; then
             echo "${{ inputs.urls }}" | tr ',' '\n' | while read url; do
               url=$(echo "$url" | xargs)
               [ -n "$url" ] && npm run crawl -- --url "$url"
             done
+          elif [ "${{ inputs.debug }}" == "true" ]; then
+            echo "=== 调试模式 ==="
+            echo "1. 检查当前状态:"
+            npm run crawl -- --check
+            echo ""
+            echo "2. Dry-run 发现视频但不处理:"
+            npm run crawl -- --dry-run
           else
             npm run crawl
           fi
 
+      - name: 检查爬虫状态
+        run: |
+          echo "=== 爬虫状态 ==="
+          node scripts/crawl-douyin.js --check 2>&1 || true
+          echo "---"
+          echo "data/ 目录 Git 状态:"
+          git status --porcelain 'data/' || echo "(无变更)"
+          echo "---"
+          echo "data/.crawl-cache/ 内容:"
+          ls -la data/.crawl-cache/ 2>/dev/null || echo "(目录不存在或为空)"
+
       - name: 检查数据变更
         id: check
         run: |
-          if [ -n "$(git status --porcelain 'data/champions.json' 'data/other-builds.json' 'data/.crawl-state.json')" ]; then
+          if [ -n "$(git status --porcelain 'data/champions.json' 'data/other-builds.json' 'data/.crawl-state.json' 'data/name-mappings.json')" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✅ 检测到数据变更"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "⚠️ 无数据变更 - 可能原因:"
+            echo "   1. 博主近 25 天未发布新视频"
+            echo "   2. 抖音页面结构已变更，爬虫未发现新视频"
+            echo "   3. 所有新视频已被之前的工作流处理"
+            echo ""
+            echo "排查建议:"
+            echo "   - 手动触发 workflow 并开启 debug 模式查看详细日志"
+            echo "   - 本地运行 npm run crawl -- --dry-run 看能否发现视频"
+            echo "   - 检查 data/.crawl-cache/douyin_cookies.txt 是否有效"
           fi
 
       - name: 提交并推送
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.changed == 'true' && inputs.debug != true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/champions.json data/other-builds.json data/.crawl-state.json
+          git add data/champions.json data/other-builds.json data/.crawl-state.json data/name-mappings.json
           git commit -m "chore(data): 自动爬取套路数据 $(date +%Y-%m-%d)"
           git push
 
       - name: 触发部署
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.changed == 'true' && inputs.debug != true
         run: gh workflow run deploy-pages.yml
         env:
           GH_TOKEN: ${{ github.token }}

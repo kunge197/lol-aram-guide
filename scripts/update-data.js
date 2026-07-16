@@ -12,6 +12,7 @@
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const { getAliasesMap } = require("../lib/name-mappings");
 
 // ==================== 配置 ====================
 
@@ -28,56 +29,12 @@ const TAG_MAP = {
   Support: "辅助",
 };
 
-// 英雄别名 (手动维护，Data Dragon 不提供别名)
-// ⚠️ 同步维护: 此映射与 scripts/crawl-douyin.js 的 NICKNAME_MAP 需保持一致
-const ALIASES = {
-  Jinx: ["金克斯"],
-  Ezreal: ["EZ", "伊泽"],
-  LeeSin: ["盲僧", "瞎子"],
-  Zed: ["zed"],
-  Yasuo: ["风男", "托儿索", "疾风剑豪"],
-  Lux: ["光辉", "光女"],
-  Garen: ["德玛西亚"],
-  KaiSa: ["Kaisa"],
-  Akali: ["AKL"],
-  Thresh: ["灯笼怪"],
-  Ziggs: ["炸弹人"],
-  Draven: ["文", "荣耀行刑官"],
-  Katarina: ["卡特", "Kat"],
-  Sett: ["劲夫", "腕豪"],
-  Ashe: ["寒冰"],
-  Viktor: ["三只手"],
-  Nami: ["人鱼"],
-  DrMundo: ["蒙多医生"],
-  MasterYi: ["剑圣", "无极剑圣", "JS"],
-  Orianna: ["发条魔灵"],
-  Brand: ["火男"],
-  Mordekaiser: ["铁男"],
-  Nidalee: ["豹女"],
-  Lillia: ["莉莉亚"],
-  Maokai: ["大树"],
-  Malphite: ["石头人"],
-  Fiddlesticks: ["稻草人"],
-  Kassadin: ["卡萨丁"],
-  Riven: ["瑞文"],
-  Rumble: ["兰博"],
-  Vayne: ["VN"],
-  Lucian: ["奥巴马"],
-  Swain: ["乌鸦"],
-  Singed: ["炼金"],
-  Taric: ["宝石"],
-  Nocturne: ["梦魇"],
-  TwistedFate: ["卡牌"],
-  Trundle: ["巨魔"],
-  Sion: ["塞恩"],
-  Teemo: ["提莫"],
-  Zilean: ["时光"],
-  Vladimir: ["吸血鬼"],
-  JarvanIV: ["嘉文", "皇子"],
-  Hecarim: ["人马"],
-  Fizz: ["鱼人"],
-  Velkoz: ["大眼"],
-};
+/**
+ * 英雄别名映射
+ * 从 data/name-mappings.json 加载，与 scripts/crawl-douyin.js 共用同一份。
+ * 如需增删别名，请编辑 data/name-mappings.json。
+ */
+const ALIASES = getAliasesMap();
 
 // ==================== 工具函数 ====================
 

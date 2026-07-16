@@ -83,5 +83,5 @@ scripts/
 - GITHUB_TOKEN push 不触发其他 workflow，需 `gh workflow run` 显式触发
 - 截图路径 `C:\Users\坤哥\AppData\Local\Temp\douyin_debug.png` 只在本地有效
 - GitHub Actions 中 CRAWL_CONCURRENCY=2（预制 runner 资源有限），本地默认 3
-- 别名映射 (`scripts/crawl-douyin.js` NICKNAME_MAP 与 `scripts/update-data.js` ALIASES) 需同步维护
+- 英雄名称映射统一在 `data/name-mappings.json` 管理，`lib/name-mappings.js` 提供加载工具，两脚本共用
 - 爬虫成功处理视频后自动删除 MP4/WAV 文件以节省空间，transcript 缓存保留

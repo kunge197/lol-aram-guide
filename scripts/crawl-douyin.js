@@ -33,6 +33,7 @@ const http = require("http");
 const crypto = require("crypto");
 const { execSync } = require("child_process");
 const OpenAI = require("openai");
+const { getNicknameMap } = require("../lib/name-mappings");
 
 // ==================== 配置 ====================
 
@@ -40,6 +41,8 @@ const DATA_DIR = path.join(__dirname, "..", "data");
 const CACHE_DIR = path.join(DATA_DIR, ".crawl-cache");
 const STATE_FILE = path.join(DATA_DIR, ".crawl-state.json");
 const CHAMPIONS_FILE = path.join(DATA_DIR, "champions.json");
+/** processedVideos 最大保留数量，超出时裁剪旧记录，避免文件无限增长 */
+const MAX_PROCESSED_VIDEOS = 200;
 const OTHER_BUILDS_FILE = path.join(DATA_DIR, "other-builds.json");
 const COOKIE_FILE = path.join(CACHE_DIR, "douyin_cookies.txt");
 const CONCURRENCY = parseInt(process.env.CRAWL_CONCURRENCY || "3", 10);
@@ -107,6 +110,10 @@ function markVideoProcessed(videoId) {
   if (!state.processedVideos.includes(videoId)) {
     state.processedVideos.push(videoId);
   }
+  // 限制数组大小，防止无限增长
+  if (state.processedVideos.length > MAX_PROCESSED_VIDEOS) {
+    state.processedVideos = state.processedVideos.slice(-MAX_PROCESSED_VIDEOS);
+  }
   state.lastCrawlTime = new Date().toISOString();
   saveState(state);
 }
@@ -172,19 +179,10 @@ async function getCookies() {
   return cookieStr;
 }
 
-// ==================== 抖音视频发现（Playwright 主力） ====================
+// ==================== 视频发现 ====================
 
 /**
- * 通过 Douyin Web API 获取博主视频列表
- * 注意: 抖音 API 需要 X-Bogus 签名，纯 HTTP 直连不可靠
- *       Playwright 兜底为实际主力方式
- */
-async function discoverVideosViaAPI(blogger) {
-  return []; // API 直连因抖音 X-Bogus 签名限制不可行，使用 Playwright 兜底
-}
-
-/**
- * 通过 Playwright 脚本发现视频 (主力方式)
+ * 通过 Playwright 脚本发现视频
  * 用临时文件传递 JSON 结果，避免 Windows 管道编码问题
  */
 async function discoverVideosViaPlaywright(blogger) {
@@ -230,12 +228,18 @@ async function discoverVideosViaPlaywright(blogger) {
 }
 
 /**
- * 发现博主视频: 通过 Playwright 获取
+ * 发现博主视频
  */
 async function discoverVideos(blogger) {
   log(`发现视频: ${blogger.name}`);
   const videos = await discoverVideosViaPlaywright(blogger);
   log(`  发现 ${videos.length} 个视频`);
+  if (videos.length === 0) {
+    log(`  ⚠️ 未发现视频，可能原因：`);
+    log(`     - 抖音页面结构已变更（检查 douyin_user_videos.py 的拦截 API 路径）`);
+    log(`     - Cookie 已过期（运行 --refresh-cookies 刷新）`);
+    log(`     - 博主 ${blogger.name} 近 25 天未发布新视频`);
+  }
   return videos;
 }
 
@@ -349,7 +353,9 @@ function extractAudio(videoPath, audioPath) {
       timeout: 120000, stdio: "pipe",
     });
     return fs.existsSync(audioPath) && fs.statSync(audioPath).size > 1000;
-  } catch {
+  } catch (e) {
+    log(`  ⚠️ 音频提取失败: ${e.message}`);
+    log(`     视频路径: ${videoPath}`);
     return false;
   }
 }
@@ -503,82 +509,11 @@ async function parseBuildFromTranscript(transcript, title = "") {
 // ==================== 昵称 → 英雄映射表 ====================
 
 /**
- * 常见英雄昵称/简称 → champions.json 中的 id
- * LLM 可能输出各种称呼，此表将 nickname 归一化为标准 ID
- * ⚠️ 同步维护: 此映射与 scripts/update-data.js 的 ALIASES 需保持一致
+ * 从 data/name-mappings.json 加载统一映射表。
+ * 如需增删映射，请编辑 data/name-mappings.json 而非此处。
+ * 此文件与 scripts/update-data.js 共用同一份映射，无需同步维护。
  */
-const NICKNAME_MAP = {
-  // 中文通用称呼
-  "火男": "brand",
-  "铁男": "mordekaiser",
-  "豹女": "nidalee",
-  "莉莉亚": "lillia",
-  "大树": "maokai",
-  "石头人": "malphite",
-  "稻草人": "fiddlesticks",
-  "卡萨丁": "kassadin",
-  "卡莎": "kaisa",
-  "vn": "vayne",
-  "瞎子": "lee-sin",
-  "螳螂": "khazix",
-  "狮子狗": "rengar",
-  "鳄鱼": "renekton",
-  "挖掘机": "rek-sai",
-  "武器": "jax",
-  "剑姬": "fiora",
-  "瑞文": "riven",
-  "兰博": "rumble",
-  "龙龟": "rammus",
-  "猴子": "monkey-king",
-  "乌鸦": "swain",
-  "蛇女": "cassiopeia",
-  "球女": "syndra",
-  "蚂蚱": "malzahar",
-  "大眼": "velkoz",
-  "维克托": "viktor",
-  "杰斯": "jayce",
-  "蜘蛛": "elise",
-  "鱼人": "fizz",
-  "卡牌": "twisted-fate",
-  "梦魇": "nocturne",
-  "肾": "shen",
-  "奥巴马": "lucian",
-  "人马": "hecarim",
-  "剑圣": "master-yi",
-  "小丑": "shaco",
-  "宝石": "taric",
-  "炼金": "singed",
-  "老鼠": "twitch",
-  "男枪": "graves",
-  "女枪": "miss-fortune",
-  "日女": "leona",
-  "风女": "janna",
-  "娜美": "nami",
-  "琴女": "sona",
-  "蚂蚱": "malzahar",
-  "韦鲁斯": "varus",
-  "俄洛伊": "illaoi",
-  "巨魔": "trundle",
-  "塞恩": "sion",
-  "提莫": "teemo",
-  "时光": "zilean",
-  "吸血鬼": "vladimir",
-  "万血": "chogath",
-  "嘉文": "jarvan-iv",
-  "皇子": "jarvan-iv",
-  "寒冰": "ashe",
-  "光辉": "lux",
-  "盖伦": "garen",
-  "卡特": "katarina",
-  "卡特琳娜": "katarina",
-  "安妮": "annie",
-  "德莱文": "draven",
-  "亚索": "yasuo",
-  "永恩": "yone",
-  "维克托": "viktor",
-  "泽拉斯": "xerath",
-  "萨科": "shaco",
-};
+const NICKNAME_MAP = getNicknameMap();
 
 /** 通过昵称查找英雄 ID */
 function resolveChampionId(name) {

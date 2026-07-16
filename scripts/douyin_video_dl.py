@@ -9,7 +9,7 @@
 
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["playwright>=1.51"]
+# dependencies = ["playwright>=1.51,<1.62"]
 # ///
 
 import asyncio

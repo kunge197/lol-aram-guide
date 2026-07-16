@@ -7,9 +7,10 @@
 输出: JSON 格式的视频列表 (stdout)
 """
 
+#!/usr/bin/env python
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["playwright>=1.51"]
+# dependencies = ["playwright>=1.51,<1.62"]
 # ///
 
 import asyncio
@@ -17,7 +18,11 @@ import json
 import os
 import sys
 import time
+import tempfile
 from playwright.async_api import async_playwright
+
+# 允许通过环境变量开启更详细的调试日志
+VERBOSE = os.environ.get("DOUYIN_DEBUG") == "1" or "--verbose" in sys.argv
 
 
 async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict]:
@@ -51,7 +56,6 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
 
         async def on_response(response):
             url = response.url
-            # 捕获 aweme/post 接口（博主视频列表）
             if "/aweme/v1/web/aweme/post/" in url:
                 if url in seen_api_urls:
                     return
@@ -59,15 +63,32 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
                 try:
                     data = await response.json()
                     api_responses.append(data)
-                    aweme_list = data.get("aweme_list") or []
-                    print(f"[DEBUG] Captured aweme/post: {len(aweme_list)} videos, has_more={data.get('has_more')}", file=sys.stderr)
+                    aweme_list = data.get("aweme_list") or data.get("data", {}).get("aweme_list") or []
+                    print(f"[DEBUG] 拦截 aweme/post: {len(aweme_list)} 个视频, has_more={data.get('has_more')}", file=sys.stderr)
+                    if not aweme_list:
+                        print(f"[DEBUG] API 返回空列表，完整响应 (前200字): {json.dumps(data, ensure_ascii=False)[:200]}", file=sys.stderr)
                 except Exception as e:
-                    print(f"[DEBUG] aweme/post JSON error: {e}", file=sys.stderr)
+                    print(f"[DEBUG] aweme/post JSON 解析失败: {e}", file=sys.stderr)
+                    # 尝试读取原始文本（可能是非 JSON 错误响应）
+                    try:
+                        text = await response.text()
+                        print(f"[DEBUG] 原始响应 (前300字): {text[:300]}", file=sys.stderr)
+                    except:
+                        pass
+            elif VERBOSE and "/aweme/v1/web/" in url:
+                # 调试模式下打印所有抖音 API 请求
+                try:
+                    text = await response.text()
+                    print(f"[DEBUG] 其他抖音 API: {url[:120]} -> {len(text)} 字", file=sys.stderr)
+                except:
+                    pass
 
         def on_request(request):
             url = request.url
             if "/aweme/v1/web/aweme/post/" in url:
-                print(f"[DEBUG] Request aweme/post", file=sys.stderr)
+                print(f"[DEBUG] 请求 aweme/post: {url[:150]}", file=sys.stderr)
+            elif VERBOSE and "/aweme/" in url:
+                print(f"[DEBUG] 请求: {url[:150]}", file=sys.stderr)
 
         page.on("response", on_response)
         page.on("request", on_request)
@@ -75,8 +96,12 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
         # 导航到博主主页
         try:
             await page.goto(user_url, wait_until="domcontentloaded", timeout=30000)
+            if VERBOSE:
+                print(f"[DEBUG] 导航完成，当前 URL: {page.url}", file=sys.stderr)
         except Exception as e:
-            print(f"[DEBUG] goto exception: {e}", file=sys.stderr)
+            print(f"[DEBUG] goto 异常: {e}", file=sys.stderr)
+            if VERBOSE:
+                print(f"[DEBUG] 当前 URL: {page.url}", file=sys.stderr)
 
         # 智能等待：等视频链接出现或 API 响应到来，最多 8s
         print(f"[DEBUG] Waiting for video content to load...", file=sys.stderr)
@@ -129,14 +154,17 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
                         print(f"[DEBUG] Reached bottom, stopping", file=sys.stderr)
                         break
 
-        # 截图调试
-        try:
-            import tempfile
-            screenshot_path = os.path.join(tempfile.gettempdir(), "douyin_debug.png")
-            await page.screenshot(path=screenshot_path, full_page=True)
-            print(f"[DEBUG] Screenshot saved to {screenshot_path}", file=sys.stderr)
-        except Exception as e:
-            print(f"[DEBUG] Screenshot failed: {e}", file=sys.stderr)
+        # 截图调试（只在本地运行时有意义，CI 中无降级影响）
+        if not os.environ.get("CI"):
+            try:
+                screenshot_path = os.path.join(
+                    os.path.dirname(__file__), "..", "data", ".crawl-cache", "douyin_debug.png"
+                )
+                os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
+                await page.screenshot(path=screenshot_path, full_page=True)
+                print(f"[DEBUG] Screenshot saved to {screenshot_path}", file=sys.stderr)
+            except Exception as e:
+                print(f"[DEBUG] Screenshot failed: {e}", file=sys.stderr)
 
         # 从 DOM 提取视频 ID（兜底）
         dom_ids = set()
@@ -177,11 +205,24 @@ async def extract_user_videos(user_url: str, max_videos: int = 100) -> list[dict
         # 页面信息
         try:
             title = await page.title()
-            print(f"[DEBUG] Page title: {title}", file=sys.stderr)
+            print(f"[DEBUG] 页面标题: {title}", file=sys.stderr)
             url_now = page.url
-            print(f"[DEBUG] Current URL: {url_now}", file=sys.stderr)
-        except:
-            pass
+            print(f"[DEBUG] 当前 URL: {url_now}", file=sys.stderr)
+            # 检查页面中是否有任何可见的视频元素
+            has_video_section = await page.evaluate("""
+                () => {
+                    const selectors = ['[class*="video"]', '[class*="aweme"]', '[class*="post"]',
+                                       'article', '[data-e2e*="video"]', '[class*="feed"]'];
+                    for (const sel of selectors) {
+                        const el = document.querySelector(sel);
+                        if (el) return sel + ' (可见)';
+                    }
+                    return '无匹配';
+                }
+            """)
+            print(f"[DEBUG] 页面视频区域检测: {has_video_section}", file=sys.stderr)
+        except Exception as e:
+            print(f"[DEBUG] 页面信息提取失败: {e}", file=sys.stderr)
 
         await browser.close()
 
@@ -237,6 +278,14 @@ def main():
         videos = [v for v in videos if v.get("create_time") == 0 or (v.get("create_time") or 0) >= cutoff]
 
     result = {"url": user_url, "total": len(videos), "videos": videos}
+
+    # 报告发现概况
+    if not videos:
+        print(f"[RESULT] 在 {user_url} 未发现任何视频", file=sys.stderr)
+        print(f"[RESULT] API 拦截次数: {len(api_responses)}, DOM 兜底数: {len(dom_ids)}", file=sys.stderr)
+    else:
+        print(f"[RESULT] 共发现 {len(videos)} 个视频", file=sys.stderr)
+
     print(json.dumps(result, ensure_ascii=True, indent=2))
 
 

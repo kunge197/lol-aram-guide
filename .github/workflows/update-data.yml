@@ -33,10 +33,12 @@ jobs:
       - name: 检查是否有数据变更
         id: check
         run: |
-          if [ -n "$(git status --porcelain data/)" ]; then
+          if [ -n "$(git status --porcelain 'data/')" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✅ 检测到数据变更"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ 无数据变更（游戏可能未更新版本）"
           fi
 
       - name: 提交并推送数据更新
