@@ -12,8 +12,7 @@ on:
       debug:
         description: "调试模式：详细日志输出，不下推更改"
         required: false
-        type: boolean
-        default: false
+        default: ""
 
 env:
   PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
@@ -95,7 +94,7 @@ except Exception as e:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           LLM_MODEL: ${{ secrets.LLM_MODEL }}
-          DOUYIN_DEBUG: ${{ inputs.debug == 'true' && '1' || '' }}
+          DOUYIN_DEBUG: ${{ inputs.debug != '' && '1' || '' }}
         run: |
           if [ -n "${{ inputs.urls }}" ]; then
             echo "${{ inputs.urls }}" | tr ',' '\n' | while read url; do
@@ -144,7 +143,7 @@ except Exception as e:
           fi
 
       - name: 提交并推送
-        if: steps.check.outputs.changed == 'true' && inputs.debug != true
+        if: steps.check.outputs.changed == 'true' && inputs.debug == ''
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -153,7 +152,7 @@ except Exception as e:
           git push
 
       - name: 触发部署
-        if: steps.check.outputs.changed == 'true' && inputs.debug != true
+        if: steps.check.outputs.changed == 'true' && inputs.debug == ''
         run: gh workflow run deploy-pages.yml
         env:
           GH_TOKEN: ${{ github.token }}

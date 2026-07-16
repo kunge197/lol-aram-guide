@@ -39,6 +39,14 @@ data/.crawl-cache/
 # vercel
 .vercel
 
+# claude code
+.claude/
+
+# generated docs
+INTERVIEW.md
+log.txt
+pages_status.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
