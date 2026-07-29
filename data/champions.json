@@ -779,6 +779,657 @@
     ]
   },
   {
+    "id": "jade_ahri",
+    "name": "九尾妖狐",
+    "nameEn": "Jade_Ahri",
+    "title": "阿狸",
+    "aliases": [],
+    "types": [
+      "法师",
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_alistar",
+    "name": "牛头酋长",
+    "nameEn": "Jade_Alistar",
+    "title": "阿利斯塔",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_amumu",
+    "name": "殇之木乃伊",
+    "nameEn": "Jade_Amumu",
+    "title": "阿木木",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_anivia",
+    "name": "冰晶凤凰",
+    "nameEn": "Jade_Anivia",
+    "title": "艾尼维亚",
+    "aliases": [],
+    "types": [
+      "法师",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_annie",
+    "name": "黑暗之女",
+    "nameEn": "Jade_Annie",
+    "title": "安妮",
+    "aliases": [],
+    "types": [
+      "法师",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_ashe",
+    "name": "寒冰射手",
+    "nameEn": "Jade_Ashe",
+    "title": "艾希",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_blitzcrank",
+    "name": "蒸汽机器人",
+    "nameEn": "Jade_Blitzcrank",
+    "title": "布里茨",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_brand",
+    "name": "复仇焰魂",
+    "nameEn": "Jade_Brand",
+    "title": "布兰德",
+    "aliases": [],
+    "types": [
+      "法师",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_chogath",
+    "name": "虚空恐惧",
+    "nameEn": "Jade_Chogath",
+    "title": "科加斯",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_corki",
+    "name": "英勇投弹手",
+    "nameEn": "Jade_Corki",
+    "title": "库奇",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_dr-mundo",
+    "name": "祖安狂人",
+    "nameEn": "Jade_DrMundo",
+    "title": "蒙多医生",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "战士"
+    ]
+  },
+  {
+    "id": "jade_evelynn",
+    "name": "寡妇制造者",
+    "nameEn": "Jade_Evelynn",
+    "title": "伊芙琳",
+    "aliases": [],
+    "types": [
+      "刺客",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_ezreal",
+    "name": "探险家",
+    "nameEn": "Jade_Ezreal",
+    "title": "伊泽瑞尔",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_fiddlesticks",
+    "name": "末日使者",
+    "nameEn": "Jade_Fiddlesticks",
+    "title": "费德提克",
+    "aliases": [],
+    "types": [
+      "法师",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_gangplank",
+    "name": "海洋之灾",
+    "nameEn": "Jade_Gangplank",
+    "title": "普朗克",
+    "aliases": [],
+    "types": [
+      "战士"
+    ]
+  },
+  {
+    "id": "jade_garen",
+    "name": "德玛西亚之力",
+    "nameEn": "Jade_Garen",
+    "title": "盖伦",
+    "aliases": [],
+    "types": [
+      "战士",
+      "坦克"
+    ]
+  },
+  {
+    "id": "jade_gragas",
+    "name": "酒桶",
+    "nameEn": "Jade_Gragas",
+    "title": "古拉加斯",
+    "aliases": [],
+    "types": [
+      "战士",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_heimerdinger",
+    "name": "大发明家",
+    "nameEn": "Jade_Heimerdinger",
+    "title": "黑默丁格",
+    "aliases": [],
+    "types": [
+      "法师",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_janna",
+    "name": "风暴之怒",
+    "nameEn": "Jade_Janna",
+    "title": "迦娜",
+    "aliases": [],
+    "types": [
+      "辅助",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_jarvan-iv",
+    "name": "德玛西亚皇子",
+    "nameEn": "Jade_JarvanIV",
+    "title": "嘉文四世",
+    "aliases": [],
+    "types": [
+      "战士",
+      "坦克"
+    ]
+  },
+  {
+    "id": "jade_jax",
+    "name": "武器大师",
+    "nameEn": "Jade_Jax",
+    "title": "贾克斯",
+    "aliases": [],
+    "types": [
+      "战士"
+    ]
+  },
+  {
+    "id": "jade_karthus",
+    "name": "死亡颂唱者",
+    "nameEn": "Jade_Karthus",
+    "title": "卡尔萨斯",
+    "aliases": [],
+    "types": [
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_kassadin",
+    "name": "虚空行者",
+    "nameEn": "Jade_Kassadin",
+    "title": "卡萨丁",
+    "aliases": [],
+    "types": [
+      "刺客",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_katarina",
+    "name": "不祥之刃",
+    "nameEn": "Jade_Katarina",
+    "title": "卡特琳娜",
+    "aliases": [],
+    "types": [
+      "刺客",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_kayle",
+    "name": "审判天使",
+    "nameEn": "Jade_Kayle",
+    "title": "凯尔",
+    "aliases": [],
+    "types": [
+      "法师",
+      "ADC"
+    ]
+  },
+  {
+    "id": "jade_kog-maw",
+    "name": "深渊巨口",
+    "nameEn": "Jade_KogMaw",
+    "title": "克格莫",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_lee-sin",
+    "name": "盲僧",
+    "nameEn": "Jade_LeeSin",
+    "title": "李青",
+    "aliases": [],
+    "types": [
+      "战士",
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_leona",
+    "name": "曙光女神",
+    "nameEn": "Jade_Leona",
+    "title": "蕾欧娜",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_lulu",
+    "name": "仙灵女巫",
+    "nameEn": "Jade_Lulu",
+    "title": "璐璐",
+    "aliases": [],
+    "types": [
+      "辅助",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_lux",
+    "name": "光辉女郎",
+    "nameEn": "Jade_Lux",
+    "title": "拉克丝",
+    "aliases": [],
+    "types": [
+      "法师",
+      "辅助"
+    ]
+  },
+  {
+    "id": "jade_malphite",
+    "name": "熔岩巨兽",
+    "nameEn": "Jade_Malphite",
+    "title": "墨菲特",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_malzahar",
+    "name": "虚空先知",
+    "nameEn": "Jade_Malzahar",
+    "title": "玛尔扎哈",
+    "aliases": [],
+    "types": [
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_master-yi",
+    "name": "无极剑圣",
+    "nameEn": "Jade_MasterYi",
+    "title": "易",
+    "aliases": [],
+    "types": [
+      "战士",
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_miss-fortune",
+    "name": "赏金猎人",
+    "nameEn": "Jade_MissFortune",
+    "title": "厄运小姐",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_morgana",
+    "name": "堕落天使",
+    "nameEn": "Jade_Morgana",
+    "title": "莫甘娜",
+    "aliases": [],
+    "types": [
+      "辅助",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_nasus",
+    "name": "沙漠死神",
+    "nameEn": "Jade_Nasus",
+    "title": "内瑟斯",
+    "aliases": [],
+    "types": [
+      "战士",
+      "坦克"
+    ]
+  },
+  {
+    "id": "jade_nidalee",
+    "name": "狂野女猎手",
+    "nameEn": "Jade_Nidalee",
+    "title": "奈德丽",
+    "aliases": [],
+    "types": [
+      "刺客",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_nunu",
+    "name": "雪人骑士",
+    "nameEn": "Jade_Nunu",
+    "title": "努努",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_olaf",
+    "name": "狂战士",
+    "nameEn": "Jade_Olaf",
+    "title": "奥拉夫",
+    "aliases": [],
+    "types": [
+      "战士",
+      "坦克"
+    ]
+  },
+  {
+    "id": "jade_pantheon",
+    "name": "战争之王",
+    "nameEn": "Jade_Pantheon",
+    "title": "潘森",
+    "aliases": [],
+    "types": [
+      "战士",
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_rammus",
+    "name": "披甲龙龟",
+    "nameEn": "Jade_Rammus",
+    "title": "拉莫斯",
+    "aliases": [],
+    "types": [
+      "坦克"
+    ]
+  },
+  {
+    "id": "jade_ryze",
+    "name": "流浪法师",
+    "nameEn": "Jade_Ryze",
+    "title": "瑞兹",
+    "aliases": [],
+    "types": [
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_shaco",
+    "name": "恶魔小丑",
+    "nameEn": "Jade_Shaco",
+    "title": "萨科",
+    "aliases": [],
+    "types": [
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_singed",
+    "name": "炼金术士",
+    "nameEn": "Jade_Singed",
+    "title": "辛吉德",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_sion",
+    "name": "亡灵勇士",
+    "nameEn": "Jade_Sion",
+    "title": "赛恩",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "战士"
+    ]
+  },
+  {
+    "id": "jade_sivir",
+    "name": "战争女神",
+    "nameEn": "Jade_Sivir",
+    "title": "希维尔",
+    "aliases": [],
+    "types": [
+      "ADC"
+    ]
+  },
+  {
+    "id": "jade_skarner",
+    "name": "水晶先锋",
+    "nameEn": "Jade_Skarner",
+    "title": "斯卡纳",
+    "aliases": [],
+    "types": [
+      "坦克",
+      "战士"
+    ]
+  },
+  {
+    "id": "jade_sona",
+    "name": "琴瑟仙女",
+    "nameEn": "Jade_Sona",
+    "title": "娑娜",
+    "aliases": [],
+    "types": [
+      "辅助",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_soraka",
+    "name": "众星之子",
+    "nameEn": "Jade_Soraka",
+    "title": "索拉卡",
+    "aliases": [],
+    "types": [
+      "辅助",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_taric",
+    "name": "宝石骑士",
+    "nameEn": "Jade_Taric",
+    "title": "塔里克",
+    "aliases": [],
+    "types": [
+      "辅助",
+      "坦克"
+    ]
+  },
+  {
+    "id": "jade_teemo",
+    "name": "迅捷斥候",
+    "nameEn": "Jade_Teemo",
+    "title": "提莫",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_tristana",
+    "name": "麦林炮手",
+    "nameEn": "Jade_Tristana",
+    "title": "崔丝塔娜",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_tryndamere",
+    "name": "蛮族之王",
+    "nameEn": "Jade_Tryndamere",
+    "title": "泰达米尔",
+    "aliases": [],
+    "types": [
+      "战士",
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_twisted-fate",
+    "name": "卡牌大师",
+    "nameEn": "Jade_TwistedFate",
+    "title": "崔斯特",
+    "aliases": [],
+    "types": [
+      "法师",
+      "ADC"
+    ]
+  },
+  {
+    "id": "jade_twitch",
+    "name": "瘟疫之源",
+    "nameEn": "Jade_Twitch",
+    "title": "图奇",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_vayne",
+    "name": "暗夜猎手",
+    "nameEn": "Jade_Vayne",
+    "title": "薇恩",
+    "aliases": [],
+    "types": [
+      "ADC",
+      "刺客"
+    ]
+  },
+  {
+    "id": "jade_veigar",
+    "name": "邪恶小法师",
+    "nameEn": "Jade_Veigar",
+    "title": "维迦",
+    "aliases": [],
+    "types": [
+      "法师"
+    ]
+  },
+  {
+    "id": "jade_warwick",
+    "name": "嗜血猎手",
+    "nameEn": "Jade_Warwick",
+    "title": "沃里克",
+    "aliases": [],
+    "types": [
+      "战士",
+      "坦克"
+    ]
+  },
+  {
+    "id": "jade_wukong",
+    "name": "齐天大圣",
+    "nameEn": "Jade_Wukong",
+    "title": "",
+    "aliases": [],
+    "types": [
+      "战士",
+      "坦克"
+    ]
+  },
+  {
+    "id": "jade_zilean",
+    "name": "时光守护者",
+    "nameEn": "Jade_Zilean",
+    "title": "基兰",
+    "aliases": [],
+    "types": [
+      "辅助",
+      "法师"
+    ]
+  },
+  {
     "id": "janna",
     "name": "风暴之怒",
     "nameEn": "Janna",
